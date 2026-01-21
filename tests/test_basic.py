@@ -10,7 +10,7 @@ def test_basic():
 
 def test_edge_api_with_typed_ports():
     def step_a(text: str) -> dict:
-        return {"result": text.upper()}
+        return {"output": text.upper()}
 
     def step_b(data: str) -> dict:
         return {"output": data + "!"}
@@ -19,15 +19,15 @@ def test_edge_api_with_typed_ports():
     node_b = FnNode(fn=step_b)
 
     assert "text" in dir(node_a)
-    assert "result" in dir(node_a)
+    assert "output" in dir(node_a)
     assert node_a._name == "step_a"
     assert node_a.text.name == "text"
 
     graph = Graph()
-    graph.edge(node_a.result, node_b.data)
+    graph.edge(node_a.output, node_b.data)
 
     assert len(graph._edges) == 1
-    assert graph.get_connections() == [("step_a", "result", "step_b", "data")]
+    assert graph.get_connections() == [("step_a", "output", "step_b", "data")]
 
 
 def test_port_validation():
