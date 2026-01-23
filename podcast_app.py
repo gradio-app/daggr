@@ -93,6 +93,6 @@ dialogue = FnNode(
 
 graph = Graph(name="Podcast Generator")
 
-graph.edge(host_voice, dialogue.host_voice).edge(guest_voice, dialogue.guest_voice)
+(graph.edge(host_voice, dialogue.host_voice).edge(guest_voice, dialogue.guest_voice))
 
 graph.launch()
