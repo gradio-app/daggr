@@ -193,7 +193,7 @@ class UIGenerator:
             for comp in node._output_components.values():
                 comp_type = self._get_component_type(comp)
                 if comp_type == "audio":
-                    item_output_type = "audio"
+                item_output_type = "audio"
                     break
 
         items = []
@@ -445,7 +445,7 @@ class UIGenerator:
                 for comp in node._output_components.values():
                     comp_type = self._get_component_type(comp)
                     if comp_type == "audio":
-                        item_output_type = "audio"
+                    item_output_type = "audio"
                         break
 
             item_list_schema = None

@@ -861,8 +861,7 @@
 						<div class="map-items-list">
 							{#each node.map_items as item (item.index)}
 								<div class="map-item" class:has-output={item.output}>
-									<span class="map-item-index">{item.index}.</span>
-								<div class="map-item-content">
+									<div class="map-item-content">
 									{#if item.is_audio_output && item.output}
 										{@const audioId = `${node.id}_map_${item.index}`}
 										{@const state = getAudioState(audioId)}
@@ -914,7 +913,6 @@
 						<div class="item-list-items">
 							{#each node.item_list_items as item (item.index)}
 								<div class="item-list-item">
-									<span class="item-list-index">{item.index + 1}.</span>
 									<div class="item-list-fields">
 										{#each node.item_list_schema as comp (comp.port_name)}
 											{#if comp.component === 'dropdown'}
@@ -1596,16 +1594,6 @@
 		border-bottom: none;
 	}
 
-	.map-item-index {
-		font-size: 10px;
-		font-weight: 600;
-		color: #22c55e;
-		min-width: 18px;
-		padding-top: 6px;
-		font-family: 'SF Mono', Monaco, monospace;
-		align-self: flex-start;
-	}
-
 	.map-item-content {
 		flex: 1;
 		display: flex;
@@ -1692,15 +1680,6 @@
 
 	.item-list-item:last-child {
 		border-bottom: none;
-	}
-
-	.item-list-index {
-		font-size: 10px;
-		font-weight: 600;
-		color: #22c55e;
-		min-width: 18px;
-		padding-top: 6px;
-		font-family: 'SF Mono', Monaco, monospace;
 	}
 
 	.item-list-fields {

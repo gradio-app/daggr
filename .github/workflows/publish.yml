@@ -40,6 +40,12 @@ jobs:
           publish: pnpm ci:tag
         env:
           GITHUB_TOKEN: ${{ secrets.GRADIO_PAT }}
+      - name: Build frontend
+        if: steps.changesets.outputs.hasChangesets != 'true'
+        run: |
+          cd daggr/frontend
+          npm ci
+          npm run build
       - name: publish to pypi
         if: steps.changesets.outputs.hasChangesets != 'true'
         uses: "gradio-app/github/actions/publish-pypi@main"
