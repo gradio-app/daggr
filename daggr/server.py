@@ -373,7 +373,7 @@ class DaggrServer:
         x_spacing = 350
         input_column_x = 50
         x_start = 400
-        y_start = 50
+        y_start = 120
         y_gap = 30
         base_node_height = 100
         component_base_height = 60
@@ -710,14 +710,13 @@ class DaggrServer:
                 node_statuses[node_name] = "completed"
                 self.state.save_result(session_id, node_name, result)
 
-                if node_name == target_node:
-                    graph_data = self._build_graph_data(
-                        node_results, node_statuses, input_values, {}, session_id
-                    )
-                    graph_data["type"] = "node_complete"
-                    graph_data["completed_node"] = node_name
-                    graph_data["run_id"] = run_id
-                    yield graph_data
+                graph_data = self._build_graph_data(
+                    node_results, node_statuses, input_values, {}, session_id
+                )
+                graph_data["type"] = "node_complete"
+                graph_data["completed_node"] = node_name
+                graph_data["run_id"] = run_id
+                yield graph_data
 
         except Exception as e:
             if nodes_to_execute:

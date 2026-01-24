@@ -5,7 +5,7 @@ import warnings
 from abc import ABC
 from typing import Any, Callable, Dict, List, Optional
 
-from daggr.port import Port, PortNamespace, is_port
+from daggr.port import ItemList, Port, PortNamespace, is_port
 
 
 def _is_gradio_component(obj: Any) -> bool:
@@ -56,6 +56,7 @@ class Node(ABC):
         self._output_ports: List[str] = []
         self._input_components: Dict[str, Any] = {}
         self._output_components: Dict[str, Any] = {}
+        self._item_list_schemas: Dict[str, Dict[str, Any]] = {}
         self._fixed_inputs: Dict[str, Any] = {}
         self._port_connections: Dict[str, Any] = {}
 
@@ -237,7 +238,9 @@ class FnNode(Node):
     def _process_outputs(self, outputs: Dict[str, Any]):
         for port_name, component in outputs.items():
             self._output_ports.append(port_name)
-            if _is_gradio_component(component):
+            if isinstance(component, ItemList):
+                self._item_list_schemas[port_name] = component.schema
+            elif _is_gradio_component(component):
                 self._output_components[port_name] = component
 
 

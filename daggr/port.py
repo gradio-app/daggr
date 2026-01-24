@@ -99,3 +99,21 @@ class PortNamespace:
 
     def __repr__(self):
         return f"PortNamespace({list(self._names)})"
+
+
+class ItemList:
+    """Define an editable list output with per-item schema.
+
+    Example:
+        outputs={
+            "items": ItemList(
+                speaker=gr.Dropdown(choices=["Host", "Guest"]),
+                text=gr.Textbox(lines=2),
+            ),
+        }
+
+    The function should return a list of dicts matching the schema keys.
+    """
+
+    def __init__(self, **schema):
+        self.schema = schema

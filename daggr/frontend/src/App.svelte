@@ -165,9 +165,6 @@
 		console.log('[daggr] received:', data.type, data);
 		if (data.type === 'graph') {
 			graphData = data.data;
-			if (graphData && !transform.x && !transform.y) {
-				setTimeout(zoomToFit, 100);
-			}
 		} else if (data.type === 'error' && data.error) {
 			console.error('[daggr] server error:', data.error);
 		} else if (data.type === 'node_complete' || data.type === 'error') {
@@ -425,8 +422,22 @@
 
 	function handleWheel(e: WheelEvent) {
 		e.preventDefault();
+		
+		const rect = canvasEl.getBoundingClientRect();
+		const mouseX = e.clientX - rect.left;
+		const mouseY = e.clientY - rect.top;
+		
+		const canvasX = (mouseX - transform.x) / transform.scale;
+		const canvasY = (mouseY - transform.y) / transform.scale;
+		
 		const delta = e.deltaY > 0 ? 0.97 : 1.03;
-		transform.scale = Math.max(0.2, Math.min(3, transform.scale * delta));
+		const newScale = Math.max(0.2, Math.min(3, transform.scale * delta));
+		
+		transform = {
+			x: mouseX - canvasX * newScale,
+			y: mouseY - canvasY * newScale,
+			scale: newScale
+		};
 	}
 
 	function handleRunToNode(e: MouseEvent, nodeName: string) {
@@ -436,12 +447,20 @@
 		const ancestors = getAncestors(nodeName);
 		const nodesToExecute = [...ancestors, nodeName];
 		
-		if (!pendingRunIds[nodeName]) {
-			pendingRunIds[nodeName] = [];
-		}
-		pendingRunIds[nodeName] = [...pendingRunIds[nodeName], runId];
+		const nodesToMark = nodesToExecute.filter(n => {
+			if (n === nodeName) return true;
+			const results = nodeResults[n];
+			return !results || results.length === 0;
+		});
 		
-		runIdToNodes[runId] = [nodeName];
+		for (const nodeToMark of nodesToMark) {
+			if (!pendingRunIds[nodeToMark]) {
+				pendingRunIds[nodeToMark] = [];
+			}
+			pendingRunIds[nodeToMark] = [...pendingRunIds[nodeToMark], runId];
+		}
+		
+		runIdToNodes[runId] = nodesToMark;
 		
 		if (ws && wsConnected) {
 			ws.send(JSON.stringify({

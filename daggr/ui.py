@@ -78,6 +78,7 @@ class UIGenerator:
             "Number": "number",
             "Markdown": "markdown",
             "Text": "text",
+            "Dropdown": "dropdown",
         }
         return type_map.get(class_name, "text")
 
@@ -104,6 +105,8 @@ class UIGenerator:
             props["sources"] = comp.sources
         if hasattr(comp, "format"):
             props["format"] = comp.format
+        if hasattr(comp, "choices") and comp.choices:
+            props["choices"] = comp.choices
 
         return {
             "component": comp_class.lower(),
@@ -112,6 +115,34 @@ class UIGenerator:
             "props": props,
             "value": getattr(comp, "value", None),
         }
+
+    def _serialize_item_list_schema(
+        self, schema: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        serialized = []
+        for field_name, comp in schema.items():
+            comp_data = self._serialize_gradio_component(comp, field_name)
+            serialized.append(comp_data)
+        return serialized
+
+    def _build_item_list_items(
+        self, node, port_name: str, result: Any = None
+    ) -> List[Dict[str, Any]]:
+        schema = node._item_list_schemas.get(port_name, {})
+        if not schema:
+            return []
+
+        items = []
+        if result and isinstance(result, dict) and port_name in result:
+            item_list = result[port_name]
+            if isinstance(item_list, list):
+                for i, item_data in enumerate(item_list):
+                    item = {"index": i, "fields": {}}
+                    if isinstance(item_data, dict):
+                        for field_name in schema:
+                            item["fields"][field_name] = item_data.get(field_name)
+                    items.append(item)
+        return items
 
     def _build_input_components(self, node) -> List[Dict[str, Any]]:
         if not node._input_components:
@@ -408,6 +439,19 @@ class UIGenerator:
                 if "audio" in scattered_edge.item_key.lower():
                     item_output_type = "audio"
 
+            item_list_schema = None
+            item_list_items = []
+            if node._item_list_schemas:
+                first_port = list(node._item_list_schemas.keys())[0]
+                item_list_schema = self._serialize_item_list_schema(
+                    node._item_list_schemas[first_port]
+                )
+                item_list_items = self._build_item_list_items(node, first_port, result)
+                if result:
+                    print(
+                        f"[DEBUG] Node {node_name}: result={result}, first_port={first_port}, item_list_items={item_list_items}"
+                    )
+
             is_output = self._is_output_node(node_name)
             is_entry = self.graph._nx_graph.in_degree(node_name) == 0
 
@@ -428,6 +472,8 @@ class UIGenerator:
                     "map_items": scattered_items,
                     "map_item_count": len(scattered_items),
                     "item_output_type": item_output_type,
+                    "item_list_schema": item_list_schema,
+                    "item_list_items": item_list_items,
                     "status": node_statuses.get(node_name, "pending"),
                     "result": result_str,
                     "is_output_node": is_output,
@@ -690,6 +736,28 @@ class UIGenerator:
                     to_visit.append(source)
         return list(ancestors)
 
+    def _apply_item_list_edits(
+        self, node_name: str, result: Any, item_list_values: Dict
+    ) -> Any:
+        node = self.graph.nodes[node_name]
+        if not node._item_list_schemas:
+            return result
+
+        node_id = node_name.replace(" ", "_").replace("-", "_")
+        edits = item_list_values.get(node_id, {})
+        if not edits:
+            return result
+
+        first_port = list(node._item_list_schemas.keys())[0]
+        if isinstance(result, dict) and first_port in result:
+            items = result[first_port]
+            if isinstance(items, list):
+                for idx_str, field_edits in edits.items():
+                    idx = int(idx_str)
+                    if 0 <= idx < len(items) and isinstance(items[idx], dict):
+                        items[idx].update(field_edits)
+        return result
+
     def _execute_to_node_streaming(
         self, canvas_data: dict, target_node: str, run_id: str
     ):
@@ -709,6 +777,9 @@ class UIGenerator:
         print(f"[RUN] Execution order: {nodes_to_execute}")
 
         input_values = canvas_data.get("inputs", {}) if canvas_data else {}
+        item_list_values = (
+            canvas_data.get("item_list_values", {}) if canvas_data else {}
+        )
         history = canvas_data.get("history", {}) if canvas_data else {}
 
         entry_inputs: Dict[str, Dict[str, Any]] = {}
@@ -756,7 +827,12 @@ class UIGenerator:
                 # Skip if we already have results for this node
                 if node_name in existing_results:
                     print(f"[RUN] {node_name} (cached)")
-                    node_results[node_name] = existing_results[node_name]
+                    result = existing_results[node_name]
+                    result = self._apply_item_list_edits(
+                        node_name, result, item_list_values
+                    )
+                    node_results[node_name] = result
+                    self.executor.results[node_name] = result
                     node_statuses[node_name] = "completed"
                     continue
 
@@ -764,6 +840,10 @@ class UIGenerator:
                 node_statuses[node_name] = "running"
                 user_input = entry_inputs.get(node_name, {})
                 result = self.executor.execute_node(node_name, user_input)
+                result = self._apply_item_list_edits(
+                    node_name, result, item_list_values
+                )
+                self.executor.results[node_name] = result
                 node_results[node_name] = result
                 node_statuses[node_name] = "completed"
                 print(f"[RUN] {node_name} ✓")

@@ -1,9 +1,10 @@
 import tempfile
+import time
 
 import gradio as gr
 from pydub import AudioSegment
 
-from daggr import FnNode, GradioNode, Graph
+from daggr import FnNode, GradioNode, Graph, ItemList
 
 host_voice = GradioNode(
     space_or_url="abidlabs/tts",  # Currently mocked. But this would be a call to e.g. Qwen/Qwen3-TTS
@@ -43,42 +44,44 @@ guest_voice = GradioNode(
 )
 
 
-# Currently mocked. But this would be an LLM call.
-def generate_dialogue(
-    topic: str, host_voice: str, guest_voice: str
-) -> tuple[list, str]:
-    dialogue = [
-        {"voice": host_voice, "text": "Hello, how are you?"},
-        {"voice": guest_voice, "text": "I'm fine, thank you!"},
-    ]
-    html = "<strong>Host</strong>: Hello, how are you?<br><strong>Guest</strong>: I'm fine, thank you!"
-    return dialogue, html
+def generate_dialogue(topic: str) -> dict:
+    time.sleep(1)
+    return {
+        "items": [
+            {"speaker": "Host", "text": "Hello, welcome to the show!"},
+            {"speaker": "Guest", "text": "Thanks for having me!"},
+            {"speaker": "Host", "text": "Today we're discussing " + topic},
+            {"speaker": "Guest", "text": "Yes, it's a fascinating topic!"},
+        ]
+    }
 
 
 dialogue = FnNode(
     fn=generate_dialogue,
     inputs={
         "topic": gr.Textbox(label="Topic", value="AI in healthcare..."),
-        "host_voice": host_voice.audio,
-        "guest_voice": guest_voice.audio,
     },
     outputs={
-        "json": gr.JSON(label="Dialogue", visible=False),
-        "html": gr.HTML(label="Dialogue"),
+        "items": ItemList(
+            speaker=gr.Dropdown(choices=["Host", "Guest"]),
+            text=gr.Textbox(lines=2),
+        ),
     },
 )
 
 
-def chatterbox(text: str, audio: str) -> str:
-    # Currently mocked. But this would be a call to e.g. ResembleAI/chatterbox-turbo
-    return audio
+def chatterbox(text: str, speaker: str, host_audio: str, guest_audio: str) -> str:
+    voice_map = {"Host": host_audio, "Guest": guest_audio}
+    return voice_map.get(speaker, host_audio)
 
 
 samples = FnNode(
     fn=chatterbox,
     inputs={
-        "text": dialogue.json.each["text"],
-        "audio": dialogue.json.each["voice"],
+        "text": dialogue.items.each["text"],
+        "speaker": dialogue.items.each["speaker"],
+        "host_audio": host_voice.audio,
+        "guest_audio": guest_voice.audio,
     },
     outputs={
         "audio": gr.Audio(label="Sample"),
