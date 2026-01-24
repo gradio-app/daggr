@@ -30,10 +30,10 @@ class DaggrServer:
     def _setup_routes(self):
         frontend_dir = Path(__file__).parent / "frontend" / "dist"
         if not frontend_dir.exists():
-            import sys
-            share_dir = Path(sys.prefix) / "share" / "daggr" / "frontend"
-            if share_dir.exists():
-                frontend_dir = share_dir
+            raise RuntimeError(
+                f"Frontend not found at {frontend_dir}. "
+                "If developing, run 'npm run build' in daggr/frontend/"
+            )
 
         @self.app.get("/api/graph")
         async def get_graph():

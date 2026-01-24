@@ -38,9 +38,32 @@ dev = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["daggr"]
+exclude = [
+    "daggr/canvas-component/",
+    "daggr/frontend/node_modules/",
+    "daggr/frontend/src/",
+    "daggr/frontend/index.html",
+    "daggr/frontend/package.json",
+    "daggr/frontend/package-lock.json",
+    "daggr/frontend/vite.config.ts",
+    "daggr/frontend/svelte.config.js",
+    "daggr/frontend/tsconfig.json",
+]
 
-[tool.hatch.build.targets.wheel.shared-data]
-"daggr/frontend/dist" = "share/daggr/frontend"
+[tool.hatch.build.targets.sdist]
+include = [
+    "daggr/**/*.py",
+    "daggr/**/*.pyi",
+    "daggr/py.typed",
+    "daggr/package.json",
+    "daggr/assets/*",
+    "daggr/frontend/dist/**/*",
+    "README.md",
+    "LICENSE",
+]
+exclude = [
+    "daggr/canvas-component/",
+]
 
 [tool.hatch.version]
 path = "daggr/package.json"

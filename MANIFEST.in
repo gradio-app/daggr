@@ -1,3 +1,9 @@
-include README.md
 include LICENSE
-recursive-include daggr/canvas-component/backend/gradio_canvas_component/templates *
+include README.md
+include daggr/package.json
+recursive-include daggr *.py *.pyi
+recursive-include daggr/frontend/dist *
+recursive-include daggr/assets *
+prune daggr/canvas-component
+prune daggr/frontend/node_modules
+prune daggr/frontend/src
