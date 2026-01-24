@@ -203,7 +203,9 @@ class DaggrServer:
         if hasattr(comp, "type"):
             props["type"] = comp.type
         if hasattr(comp, "choices") and comp.choices:
-            props["choices"] = comp.choices
+            props["choices"] = [
+                c[1] if isinstance(c, (tuple, list)) else c for c in comp.choices
+            ]
 
         return {
             "component": comp_class.lower(),
@@ -251,9 +253,13 @@ class DaggrServer:
         if not scattered_edge:
             return []
 
+        node = self.graph.nodes[node_name]
         item_output_type = "text"
-        if scattered_edge.item_key and "audio" in scattered_edge.item_key.lower():
-            item_output_type = "audio"
+        for comp in node._output_components.values():
+            comp_type = self._get_component_type(comp)
+            if comp_type == "audio":
+                item_output_type = "audio"
+                break
 
         items = []
         if result and isinstance(result, dict) and "_scattered_results" in result:
@@ -548,13 +554,12 @@ class DaggrServer:
             )
 
             item_output_type = "text"
-            scattered_edge = self._get_scattered_edge(node_name)
-            if (
-                scattered_edge
-                and scattered_edge.item_key
-                and "audio" in scattered_edge.item_key.lower()
-            ):
-                item_output_type = "audio"
+            if is_scattered:
+                for comp in node._output_components.values():
+                    comp_type = self._get_component_type(comp)
+                    if comp_type == "audio":
+                        item_output_type = "audio"
+                        break
 
             item_list_schema = None
             item_list_items = []

@@ -147,6 +147,8 @@ class GradioNode(Node):
 
     def _process_outputs(self, outputs: Dict[str, Any]):
         for port_name, component in outputs.items():
+            if component is None:
+                continue
             self._output_ports.append(port_name)
             if _is_gradio_component(component):
                 self._output_components[port_name] = component
@@ -190,6 +192,8 @@ class InferenceNode(Node):
 
     def _process_outputs(self, outputs: Dict[str, Any]):
         for port_name, component in outputs.items():
+            if component is None:
+                continue
             self._output_ports.append(port_name)
             if _is_gradio_component(component):
                 self._output_components[port_name] = component
@@ -237,6 +241,8 @@ class FnNode(Node):
 
     def _process_outputs(self, outputs: Dict[str, Any]):
         for port_name, component in outputs.items():
+            if component is None:
+                continue
             self._output_ports.append(port_name)
             if isinstance(component, ItemList):
                 self._item_list_schemas[port_name] = component.schema
@@ -282,6 +288,8 @@ class InteractionNode(Node):
 
     def _process_outputs(self, outputs: Dict[str, Any]):
         for port_name, component in outputs.items():
+            if component is None:
+                continue
             self._output_ports.append(port_name)
             if _is_gradio_component(component):
                 self._output_components[port_name] = component

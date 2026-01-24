@@ -1,5 +1,6 @@
 import tempfile
 import time
+import urllib.request
 
 import gradio as gr
 from pydub import AudioSegment
@@ -98,7 +99,12 @@ def combine_audio_files(audio_files: list[str]) -> str:
     combined = AudioSegment.empty()
     for audio_path in audio_files:
         if audio_path:
-            segment = AudioSegment.from_file(audio_path)
+            if audio_path.startswith(("http://", "https://")):
+                tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
+                urllib.request.urlretrieve(audio_path, tmp.name)
+                segment = AudioSegment.from_file(tmp.name)
+            else:
+                segment = AudioSegment.from_file(audio_path)
             combined += segment
 
     output_path = tempfile.mktemp(suffix=".mp3")

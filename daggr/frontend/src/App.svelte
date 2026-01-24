@@ -86,7 +86,6 @@
 	let runIdToNodes = $state<Record<string, string[]>>({});
 	let nodeResults = $state<Record<string, any[]>>({});
 	let selectedResultIndex = $state<Record<string, number>>({});
-	let expandedMapNodes = $state<Record<string, boolean>>({});
 	let itemListValues = $state<Record<string, Record<number, Record<string, any>>>>({});
 
 	const globalProcessedSet = new Set<string>();
@@ -565,22 +564,9 @@
 
 	let zoomPercent = $derived(Math.round(transform.scale * 100));
 
-	function toggleMapExpand(e: MouseEvent, nodeName: string) {
-		e.stopPropagation();
-		expandedMapNodes[nodeName] = !expandedMapNodes[nodeName];
-	}
-
 	function handleReplayItem(e: MouseEvent, nodeName: string, itemIndex: number) {
 		e.stopPropagation();
 		console.log(`Replay item ${itemIndex} for node ${nodeName}`);
-	}
-
-	function getVisibleMapItems(node: GraphNode): MapItem[] {
-		const items = node.map_items || [];
-		if (expandedMapNodes[node.name] || items.length <= 3) {
-			return items;
-		}
-		return items.slice(0, 3);
 	}
 </script>
 
@@ -794,12 +780,22 @@
 							<span class="map-items-title">Items ({node.map_items.length})</span>
 						</div>
 						<div class="map-items-list">
-							{#each getVisibleMapItems(node) as item (item.index)}
+							{#each node.map_items as item (item.index)}
 								<div class="map-item" class:has-output={item.output}>
 									<span class="map-item-index">{item.index}.</span>
-									<span class="map-item-preview" title={item.preview}>
-										{item.preview.length > 25 ? item.preview.slice(0, 25) + '...' : item.preview}
-									</span>
+									<div class="map-item-content">
+										{#if item.is_audio_output && item.output}
+											<div class="map-item-audio">
+												<audio controls src={item.output}></audio>
+											</div>
+										{:else if item.output}
+											<span class="map-item-preview" title={item.output}>
+												{item.output.length > 40 ? item.output.slice(0, 40) + '...' : item.output}
+											</span>
+										{:else}
+											<span class="map-item-preview map-item-pending">Pending...</span>
+										{/if}
+									</div>
 									<button 
 										class="map-item-replay"
 										onclick={(e) => handleReplayItem(e, node.name, item.index)}
@@ -810,14 +806,6 @@
 								</div>
 							{/each}
 						</div>
-						{#if node.map_items.length > 3}
-							<button 
-								class="map-expand-btn"
-								onclick={(e) => toggleMapExpand(e, node.name)}
-							>
-								{expandedMapNodes[node.name] ? '▲ Show less' : `▼ Show all (${node.map_items.length})`}
-							</button>
-						{/if}
 					</div>
 				{/if}
 
@@ -833,31 +821,33 @@
 									<div class="item-list-fields">
 										{#each node.item_list_schema as comp (comp.port_name)}
 											{#if comp.component === 'dropdown'}
+												{@const currentValue = getItemListValue(node, item.index, comp.port_name)}
 												<select
 													class="gr-select"
-													value={getItemListValue(node, item.index, comp.port_name)}
 													onchange={(e) => handleItemListChange(node.id, item.index, comp.port_name, (e.target as HTMLSelectElement).value)}
 												>
 													{#each comp.props?.choices || [] as choice}
-														<option value={choice}>{choice}</option>
+														<option value={choice} selected={choice === currentValue}>{choice}</option>
 													{/each}
 												</select>
 											{:else if comp.component === 'textbox' || comp.component === 'text'}
-												{#if comp.props?.lines && comp.props.lines > 1}
-													<textarea
-														class="gr-input item-list-textarea"
-														rows={comp.props?.lines || 2}
-														value={getItemListValue(node, item.index, comp.port_name)}
-														oninput={(e) => handleItemListChange(node.id, item.index, comp.port_name, (e.target as HTMLTextAreaElement).value)}
-													></textarea>
-												{:else}
-													<input
-														type="text"
-														class="gr-input"
-														value={getItemListValue(node, item.index, comp.port_name)}
-														oninput={(e) => handleItemListChange(node.id, item.index, comp.port_name, (e.target as HTMLInputElement).value)}
-													/>
-												{/if}
+												<div class="gr-textbox-wrap item-list-textbox">
+													{#if comp.props?.lines && comp.props.lines > 1}
+														<textarea
+															class="gr-input"
+															rows={comp.props?.lines || 2}
+															value={getItemListValue(node, item.index, comp.port_name)}
+															oninput={(e) => handleItemListChange(node.id, item.index, comp.port_name, (e.target as HTMLTextAreaElement).value)}
+														></textarea>
+													{:else}
+														<input
+															type="text"
+															class="gr-input"
+															value={getItemListValue(node, item.index, comp.port_name)}
+															oninput={(e) => handleItemListChange(node.id, item.index, comp.port_name, (e.target as HTMLInputElement).value)}
+														/>
+													{/if}
+												</div>
 											{/if}
 										{/each}
 									</div>
@@ -1402,8 +1392,8 @@
 	}
 
 	.map-items-section {
-		border-top: 1px solid rgba(168, 85, 247, 0.2);
-		background: rgba(168, 85, 247, 0.03);
+		border-top: 1px solid rgba(34, 197, 94, 0.2);
+		background: rgba(34, 197, 94, 0.03);
 	}
 
 	.map-items-header {
@@ -1411,33 +1401,28 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 6px 10px;
-		border-bottom: 1px solid rgba(168, 85, 247, 0.1);
+		border-bottom: 1px solid rgba(34, 197, 94, 0.1);
 	}
 
 	.map-items-title {
 		font-size: 10px;
 		font-weight: 600;
-		color: #a855f7;
+		color: #22c55e;
 		text-transform: uppercase;
 		letter-spacing: 0.5px;
 	}
 
 	.map-items-list {
-		max-height: 150px;
+		max-height: 300px;
 		overflow-y: auto;
 	}
 
 	.map-item {
 		display: flex;
 		align-items: center;
-		gap: 6px;
-		padding: 6px 10px;
-		border-bottom: 1px solid rgba(168, 85, 247, 0.06);
-		transition: background 0.15s;
-	}
-
-	.map-item:hover {
-		background: rgba(168, 85, 247, 0.08);
+		gap: 8px;
+		padding: 8px 10px;
+		border-bottom: 1px solid rgba(34, 197, 94, 0.08);
 	}
 
 	.map-item:last-child {
@@ -1447,9 +1432,18 @@
 	.map-item-index {
 		font-size: 10px;
 		font-weight: 600;
-		color: #a855f7;
+		color: #22c55e;
 		min-width: 18px;
+		padding-top: 6px;
 		font-family: 'SF Mono', Monaco, monospace;
+		align-self: flex-start;
+	}
+
+	.map-item-content {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
 	}
 
 	.map-item-preview {
@@ -1465,12 +1459,17 @@
 		color: #aaa;
 	}
 
+	.map-item-pending {
+		color: #666;
+		font-style: italic;
+	}
+
 	.map-item-replay {
 		width: 20px;
 		height: 20px;
 		border: none;
-		background: rgba(168, 85, 247, 0.15);
-		color: #a855f7;
+		background: rgba(34, 197, 94, 0.15);
+		color: #22c55e;
 		font-size: 10px;
 		border-radius: 4px;
 		cursor: pointer;
@@ -1479,28 +1478,24 @@
 		justify-content: center;
 		transition: all 0.15s;
 		flex-shrink: 0;
+		align-self: flex-start;
+		margin-top: 4px;
 	}
 
 	.map-item-replay:hover {
-		background: rgba(168, 85, 247, 0.3);
+		background: rgba(34, 197, 94, 0.3);
 	}
 
-	.map-expand-btn {
+	.map-item-audio {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.map-item-audio audio {
 		width: 100%;
-		padding: 6px 10px;
-		border: none;
-		background: transparent;
-		color: #a855f7;
-		font-size: 10px;
-		font-weight: 500;
-		cursor: pointer;
-		transition: background 0.15s;
-		border-top: 1px solid rgba(168, 85, 247, 0.1);
+		height: 28px;
 	}
 
-	.map-expand-btn:hover {
-		background: rgba(168, 85, 247, 0.1);
-	}
 
 	/* Item List Styles */
 	.item-list-section {
@@ -1573,7 +1568,15 @@
 		border-color: rgba(34, 197, 94, 0.5);
 	}
 
-	.item-list-textarea {
+	.item-list-textbox {
+		flex: 1;
+	}
+
+	.item-list-textbox .gr-input {
+		padding: 6px 10px;
+	}
+
+	.item-list-textbox textarea.gr-input {
 		resize: vertical;
 		min-height: 40px;
 	}
