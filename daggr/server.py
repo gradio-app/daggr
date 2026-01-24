@@ -436,12 +436,16 @@ class DaggrServer:
 
                     if comp_id in component_to_input_node:
                         existing_input_node = component_to_input_node[comp_id]
-                        existing_input_id = existing_input_node.replace(" ", "_").replace("-", "_")
+                        existing_input_id = existing_input_node.replace(
+                            " ", "_"
+                        ).replace("-", "_")
                         synthetic_edges.append(
                             {
                                 "from_node": existing_input_id,
                                 "from_port": "value",
-                                "to_node": node_name.replace(" ", "_").replace("-", "_"),
+                                "to_node": node_name.replace(" ", "_").replace(
+                                    "-", "_"
+                                ),
                                 "to_port": port_name,
                             }
                         )
