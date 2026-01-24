@@ -11,9 +11,10 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "fastapi>=0.115.0",
     "gradio-client>=2.0.0",
-    "gradio>=6.0.0",
     "networkx>=3.0",
+    "uvicorn[standard]>=0.34.0",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -38,8 +39,8 @@ dev = [
 [tool.hatch.build.targets.wheel]
 packages = ["daggr"]
 
-[tool.hatch.build.targets.wheel.force-include]
-"daggr/canvas-component/backend/gradio_canvas_component" = "gradio_canvas_component"
+[tool.hatch.build.targets.wheel.shared-data]
+"daggr/frontend/dist" = "share/daggr/frontend"
 
 [tool.hatch.version]
 path = "daggr/package.json"

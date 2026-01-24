@@ -97,15 +97,11 @@ class Graph:
         if errors:
             raise ValueError("Invalid port connections:\n  - " + "\n  - ".join(errors))
 
-    def launch(self, **kwargs):
-        from daggr.ui import UIGenerator
+    def launch(self, host: str = "127.0.0.1", port: int = 7860, **kwargs):
+        from daggr.server import DaggrServer
 
-        self._validate_edges()
-        ui_generator = UIGenerator(self)
-        demo = ui_generator.generate_ui()
-        if hasattr(ui_generator, "_custom_css"):
-            kwargs.setdefault("css", ui_generator._custom_css)
-        return demo.launch(**kwargs)
+        server = DaggrServer(self)
+        server.run(host=host, port=port, **kwargs)
 
     def __repr__(self):
         return f"Graph(name={self.name}, nodes={len(self.nodes)}, edges={len(self._edges)})"
