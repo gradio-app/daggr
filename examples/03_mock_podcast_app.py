@@ -129,8 +129,8 @@ full_audio = FnNode(
 )
 
 graph = Graph(
-    name="Podcast Generator",
+    name="Mock Podcast Generator",
     nodes=[host_voice, guest_voice, dialogue, samples, full_audio],
 )
 
-graph.launch(s)
+graph.launch()

@@ -4,12 +4,13 @@ import difflib
 import inspect
 import warnings
 from abc import ABC
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 from daggr.port import ItemList, Port, PortNamespace, is_port
 
 
-def _suggest_similar(invalid: str, valid_options: set) -> Optional[str]:
+def _suggest_similar(invalid: str, valid_options: set) -> str | None:
     matches = difflib.get_close_matches(invalid, valid_options, n=1, cutoff=0.6)
     return matches[0] if matches else None
 
@@ -42,24 +43,24 @@ def _is_gradio_component(obj: Any) -> bool:
 class Node(ABC):
     _id_counter = 0
 
-    def __init__(self, name: Optional[str] = None):
+    def __init__(self, name: str | None = None):
         self._id = Node._id_counter
         Node._id_counter += 1
         self._name = name or ""
-        self._input_ports: List[str] = []
-        self._output_ports: List[str] = []
-        self._input_components: Dict[str, Any] = {}
-        self._output_components: Dict[str, Any] = {}
-        self._item_list_schemas: Dict[str, Dict[str, Any]] = {}
-        self._fixed_inputs: Dict[str, Any] = {}
-        self._port_connections: Dict[str, Any] = {}
+        self._input_ports: list[str] = []
+        self._output_ports: list[str] = []
+        self._input_components: dict[str, Any] = {}
+        self._output_components: dict[str, Any] = {}
+        self._item_list_schemas: dict[str, dict[str, Any]] = {}
+        self._fixed_inputs: dict[str, Any] = {}
+        self._port_connections: dict[str, Any] = {}
 
     def __getattr__(self, name: str) -> Port:
         if name.startswith("_"):
             raise AttributeError(name)
         return Port(self, name)
 
-    def __dir__(self) -> List[str]:
+    def __dir__(self) -> list[str]:
         base = ["_name", "_inputs", "_outputs", "_input_ports", "_output_ports"]
         return base + self._input_ports + self._output_ports
 
@@ -90,7 +91,7 @@ class Node(ABC):
                 f"Use node._inputs.{underscore_ports[0]} or node._outputs.{underscore_ports[0]} to access."
             )
 
-    def _process_inputs(self, inputs: Dict[str, Any]) -> None:
+    def _process_inputs(self, inputs: dict[str, Any]) -> None:
         for port_name, value in inputs.items():
             self._input_ports.append(port_name)
             if is_port(value):
@@ -100,7 +101,7 @@ class Node(ABC):
             else:
                 self._fixed_inputs[port_name] = value
 
-    def _process_outputs(self, outputs: Dict[str, Any]) -> None:
+    def _process_outputs(self, outputs: dict[str, Any]) -> None:
         for port_name, component in outputs.items():
             self._output_ports.append(port_name)
             if component is not None and _is_gradio_component(component):
@@ -111,16 +112,16 @@ class Node(ABC):
 
 
 class GradioNode(Node):
-    _name_counters: Dict[str, int] = {}
-    _api_cache: Dict[str, dict] = {}
+    _name_counters: dict[str, int] = {}
+    _api_cache: dict[str, dict] = {}
 
     def __init__(
         self,
         space_or_url: str,
-        api_name: Optional[str] = None,
-        name: Optional[str] = None,
-        inputs: Optional[Dict[str, Any]] = None,
-        outputs: Optional[Dict[str, Any]] = None,
+        api_name: str | None = None,
+        name: str | None = None,
+        inputs: dict[str, Any] | None = None,
+        outputs: dict[str, Any] | None = None,
         validate: bool = True,
     ):
         super().__init__(name)
@@ -166,7 +167,7 @@ class GradioNode(Node):
         return api_info
 
     def _validate_gradio_api(
-        self, inputs: Dict[str, Any], outputs: Dict[str, Any]
+        self, inputs: dict[str, Any], outputs: dict[str, Any]
     ) -> None:
         api_info = self._get_api_info()
 
@@ -253,14 +254,14 @@ class GradioNode(Node):
 
 
 class InferenceNode(Node):
-    _model_cache: Dict[str, bool] = {}
+    _model_cache: dict[str, bool] = {}
 
     def __init__(
         self,
         model: str,
-        name: Optional[str] = None,
-        inputs: Optional[Dict[str, Any]] = None,
-        outputs: Optional[Dict[str, Any]] = None,
+        name: str | None = None,
+        inputs: dict[str, Any] | None = None,
+        outputs: dict[str, Any] | None = None,
         validate: bool = True,
     ):
         super().__init__(name)
@@ -310,9 +311,9 @@ class FnNode(Node):
     def __init__(
         self,
         fn: Callable,
-        name: Optional[str] = None,
-        inputs: Optional[Dict[str, Any]] = None,
-        outputs: Optional[Dict[str, Any]] = None,
+        name: str | None = None,
+        inputs: dict[str, Any] | None = None,
+        outputs: dict[str, Any] | None = None,
     ):
         super().__init__(name)
         self._fn = fn
@@ -337,7 +338,7 @@ class FnNode(Node):
         sig = inspect.signature(self._fn)
         self._input_ports = list(sig.parameters.keys())
 
-    def _validate_fn_inputs(self, inputs: Dict[str, Any]) -> None:
+    def _validate_fn_inputs(self, inputs: dict[str, Any]) -> None:
         sig = inspect.signature(self._fn)
         valid_params = set(sig.parameters.keys())
         provided_params = set(inputs.keys())
@@ -361,7 +362,7 @@ class FnNode(Node):
             msg += f" Valid parameters: {valid_params}"
             raise ValueError(msg)
 
-    def _process_outputs(self, outputs: Dict[str, Any]) -> None:
+    def _process_outputs(self, outputs: dict[str, Any]) -> None:
         for port_name, component in outputs.items():
             self._output_ports.append(port_name)
             if component is None:
@@ -375,10 +376,10 @@ class FnNode(Node):
 class InteractionNode(Node):
     def __init__(
         self,
-        name: Optional[str] = None,
+        name: str | None = None,
         interaction_type: str = "generic",
-        inputs: Optional[Dict[str, Any]] = None,
-        outputs: Optional[Dict[str, Any]] = None,
+        inputs: dict[str, Any] | None = None,
+        outputs: dict[str, Any] | None = None,
     ):
         super().__init__(name)
         self._interaction_type = interaction_type

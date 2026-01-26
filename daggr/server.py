@@ -5,7 +5,7 @@ import json
 import mimetypes
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
@@ -47,15 +47,18 @@ class DaggrServer:
             hf_user = self._get_hf_user_info()
             user_id = self.state.get_effective_user_id(hf_user)
             is_on_spaces = os.environ.get("SPACE_ID") is not None
+            persistence_enabled = self.graph.persist_key is not None
             return {
                 "hf_user": hf_user,
                 "user_id": user_id,
                 "is_on_spaces": is_on_spaces,
-                "can_persist": user_id is not None,
+                "can_persist": user_id is not None and persistence_enabled,
             }
 
         @self.app.get("/api/sheets")
         async def list_sheets():
+            if not self.graph.persist_key:
+                return {"sheets": [], "user_id": None}
             hf_user = self._get_hf_user_info()
             user_id = self.state.get_effective_user_id(hf_user)
             if not user_id:
@@ -63,11 +66,16 @@ class DaggrServer:
                     {"error": "Login required to access sheets on Spaces"},
                     status_code=401,
                 )
-            sheets = self.state.list_sheets(user_id, self.graph.name)
+            sheets = self.state.list_sheets(user_id, self.graph.persist_key)
             return {"sheets": sheets, "user_id": user_id}
 
         @self.app.post("/api/sheets")
         async def create_sheet(request: Request):
+            if not self.graph.persist_key:
+                return JSONResponse(
+                    {"error": "Persistence is disabled for this graph"},
+                    status_code=400,
+                )
             hf_user = self._get_hf_user_info()
             user_id = self.state.get_effective_user_id(hf_user)
             if not user_id:
@@ -77,7 +85,7 @@ class DaggrServer:
                 )
             body = await request.json()
             name = body.get("name")
-            sheet_id = self.state.create_sheet(user_id, self.graph.name, name)
+            sheet_id = self.state.create_sheet(user_id, self.graph.persist_key, name)
             sheet = self.state.get_sheet(sheet_id)
             return {"sheet": sheet}
 
@@ -143,7 +151,7 @@ class DaggrServer:
 
             hf_user = self._get_hf_user_info()
             user_id = self.state.get_effective_user_id(hf_user)
-            current_sheet_id: Optional[str] = None
+            current_sheet_id: str | None = None
 
             try:
                 while True:
@@ -174,7 +182,7 @@ class DaggrServer:
                             sheet_id = data.get("sheet_id")
 
                             persisted_inputs = {}
-                            persisted_results: Dict[str, List[Any]] = {}
+                            persisted_results: dict[str, list[Any]] = {}
                             persisted_transform = None
 
                             if user_id and sheet_id:
@@ -366,7 +374,7 @@ class DaggrServer:
         }
         return type_map.get(class_name, "text")
 
-    def _serialize_component(self, comp, port_name: str) -> Dict[str, Any]:
+    def _serialize_component(self, comp, port_name: str) -> dict[str, Any]:
         comp_type = self._get_component_type(comp)
         comp_class = comp.__class__.__name__
 
@@ -408,7 +416,7 @@ class DaggrServer:
                 return f"/file{value}"
         return value
 
-    def _build_input_components(self, node) -> List[Dict[str, Any]]:
+    def _build_input_components(self, node) -> List[dict[str, Any]]:
         if not node._input_components:
             return []
         return [
@@ -418,7 +426,7 @@ class DaggrServer:
 
     def _build_output_components(
         self, node, result: Any = None
-    ) -> List[Dict[str, Any]]:
+    ) -> List[dict[str, Any]]:
         if not node._output_components:
             return []
 
@@ -450,7 +458,7 @@ class DaggrServer:
 
     def _build_scattered_items(
         self, node_name: str, result: Any = None
-    ) -> List[Dict[str, Any]]:
+    ) -> List[dict[str, Any]]:
         scattered_edge = self._get_scattered_edge(node_name)
         if not scattered_edge:
             return []
@@ -505,8 +513,8 @@ class DaggrServer:
         return items
 
     def _serialize_item_list_schema(
-        self, schema: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+        self, schema: dict[str, Any]
+    ) -> List[dict[str, Any]]:
         serialized = []
         for field_name, comp in schema.items():
             comp_data = self._serialize_component(comp, field_name)
@@ -515,7 +523,7 @@ class DaggrServer:
 
     def _build_item_list_items(
         self, node, port_name: str, result: Any = None
-    ) -> List[Dict[str, Any]]:
+    ) -> List[dict[str, Any]]:
         schema = node._item_list_schemas.get(port_name, {})
         if not schema:
             return []
@@ -554,8 +562,8 @@ class DaggrServer:
                         items[idx].update(field_edits)
         return result
 
-    def _compute_node_depths(self) -> Dict[str, int]:
-        depths: Dict[str, int] = {}
+    def _compute_node_depths(self) -> dict[str, int]:
+        depths: dict[str, int] = {}
         connections = self.graph.get_connections()
 
         for node_name in self.graph.nodes:
@@ -578,7 +586,7 @@ class DaggrServer:
 
         return depths
 
-    def _get_hf_user_info(self) -> Optional[dict]:
+    def _get_hf_user_info(self) -> dict | None:
         try:
             from huggingface_hub import get_token, whoami
 
@@ -597,9 +605,9 @@ class DaggrServer:
 
     def _build_graph_data(
         self,
-        node_results: Dict[str, Any] | None = None,
+        node_results: dict[str, Any] | None = None,
         node_statuses: Dict[str, str] | None = None,
-        input_values: Dict[str, Any] | None = None,
+        input_values: dict[str, Any] | None = None,
         history: Dict[str, Dict[str, List[Dict]]] | None = None,
         session_id: str | None = None,
     ) -> dict:
@@ -610,8 +618,8 @@ class DaggrServer:
 
         depths = self._compute_node_depths()
 
-        synthetic_input_nodes: List[Dict[str, Any]] = []
-        synthetic_edges: List[Dict[str, Any]] = []
+        synthetic_input_nodes: List[dict[str, Any]] = []
+        synthetic_edges: List[dict[str, Any]] = []
         input_node_positions: Dict[str, tuple] = {}
 
         component_to_input_node: Dict[int, str] = {}
@@ -675,7 +683,7 @@ class DaggrServer:
 
         max_depth = max(depths.values()) if depths else 0
 
-        nodes_by_depth: Dict[int, List[str]] = {}
+        nodes_by_depth: Dict[int, list[str]] = {}
         for node_name, depth in depths.items():
             if depth not in nodes_by_depth:
                 nodes_by_depth[depth] = []
@@ -897,7 +905,7 @@ class DaggrServer:
             "session_id": session_id,
         }
 
-    def _get_ancestors(self, node_name: str) -> List[str]:
+    def _get_ancestors(self, node_name: str) -> list[str]:
         ancestors = set()
         to_visit = [node_name]
         while to_visit:
@@ -909,8 +917,8 @@ class DaggrServer:
         return list(ancestors)
 
     def _get_user_provided_output(
-        self, node, node_id: str, input_values: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
+        self, node, node_id: str, input_values: dict[str, Any]
+    ) -> Optional[dict[str, Any]]:
         if not node._output_components:
             return None
 
@@ -994,21 +1002,21 @@ class DaggrServer:
     def _execute_to_node(
         self,
         target_node: str,
-        session_id: Optional[str],
-        input_values: Dict[str, Any],
-        selected_results: Dict[str, int],
+        session_id: str | None,
+        input_values: dict[str, Any],
+        selected_results: dict[str, int],
     ) -> dict:
         from daggr.node import InteractionNode
 
         if not session_id:
-            session_id = self.state.create_session(self.graph.name)
+            session_id = self.state.create_session(self.graph.persist_key)
 
         ancestors = self._get_ancestors(target_node)
         nodes_to_run = ancestors + [target_node]
         execution_order = self.graph.get_execution_order()
         nodes_to_execute = [n for n in execution_order if n in nodes_to_run]
 
-        entry_inputs: Dict[str, Dict[str, Any]] = {}
+        entry_inputs: Dict[str, dict[str, Any]] = {}
         for node_name in nodes_to_execute:
             node = self.graph.nodes[node_name]
             if node._input_components:
@@ -1066,23 +1074,27 @@ class DaggrServer:
     async def _execute_to_node_streaming(
         self,
         target_node: str,
-        sheet_id: Optional[str],
-        input_values: Dict[str, Any],
-        item_list_values: Dict[str, Any],
-        selected_results: Dict[str, int],
+        sheet_id: str | None,
+        input_values: dict[str, Any],
+        item_list_values: dict[str, Any],
+        selected_results: dict[str, int],
         run_id: str,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
     ):
         from daggr.node import InteractionNode
 
-        can_persist = user_id is not None and sheet_id is not None
+        can_persist = (
+            user_id is not None
+            and sheet_id is not None
+            and self.graph.persist_key is not None
+        )
 
         ancestors = self._get_ancestors(target_node)
         nodes_to_run = ancestors + [target_node]
         execution_order = self.graph.get_execution_order()
         nodes_to_execute = [n for n in execution_order if n in nodes_to_run]
 
-        entry_inputs: Dict[str, Dict[str, Any]] = {}
+        entry_inputs: Dict[str, dict[str, Any]] = {}
         for node_name in nodes_to_execute:
             node = self.graph.nodes[node_name]
             if node._input_components:

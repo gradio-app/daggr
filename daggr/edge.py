@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from daggr.port import PortLike
@@ -12,7 +12,7 @@ class Edge:
 
         self.is_scattered = isinstance(source, ScatteredPort)
         self.is_gathered = isinstance(source, GatheredPort)
-        self.item_key: Optional[str] = None
+        self.item_key: str | None = None
 
         if self.is_scattered:
             self.item_key = source.item_key

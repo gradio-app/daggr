@@ -5,7 +5,7 @@ import os
 import sqlite3
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class SessionState:
@@ -143,7 +143,7 @@ class SessionState:
                 cursor.execute("DROP TABLE _node_inputs_old")
                 cursor.execute("DROP TABLE _node_results_old")
 
-    def get_effective_user_id(self, hf_user: Optional[Dict] = None) -> Optional[str]:
+    def get_effective_user_id(self, hf_user: Optional[Dict] = None) -> str | None:
         is_on_spaces = os.environ.get("SPACE_ID") is not None
         if hf_user and hf_user.get("username"):
             return hf_user["username"]
@@ -152,7 +152,7 @@ class SessionState:
         return "local"
 
     def create_sheet(
-        self, user_id: str, graph_name: str, name: Optional[str] = None
+        self, user_id: str, graph_name: str, name: str | None = None
     ) -> str:
         sheet_id = str(uuid.uuid4())
         now = datetime.now().isoformat()
@@ -183,7 +183,7 @@ class SessionState:
         conn.close()
         return count
 
-    def list_sheets(self, user_id: str, graph_name: str) -> List[Dict[str, Any]]:
+    def list_sheets(self, user_id: str, graph_name: str) -> list[dict[str, Any]]:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute(
@@ -205,7 +205,7 @@ class SessionState:
             for row in rows
         ]
 
-    def get_sheet(self, sheet_id: str) -> Optional[Dict[str, Any]]:
+    def get_sheet(self, sheet_id: str) -> dict[str, Any] | None:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute(
@@ -272,7 +272,7 @@ class SessionState:
         return deleted
 
     def get_or_create_sheet(
-        self, user_id: str, graph_name: str, sheet_id: Optional[str] = None
+        self, user_id: str, graph_name: str, sheet_id: str | None = None
     ) -> str:
         if sheet_id:
             sheet = self.get_sheet(sheet_id)
@@ -304,7 +304,7 @@ class SessionState:
         conn.commit()
         conn.close()
 
-    def get_inputs(self, sheet_id: str) -> Dict[str, Dict[str, Any]]:
+    def get_inputs(self, sheet_id: str) -> Dict[str, dict[str, Any]]:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute(
@@ -313,7 +313,7 @@ class SessionState:
         )
         results = cursor.fetchall()
         conn.close()
-        inputs: Dict[str, Dict[str, Any]] = {}
+        inputs: Dict[str, dict[str, Any]] = {}
         for node_name, port_name, value_json in results:
             if node_name not in inputs:
                 inputs[node_name] = {}
@@ -388,7 +388,7 @@ class SessionState:
             all_results[node_name].append(json.loads(result_json))
         return all_results
 
-    def get_sheet_state(self, sheet_id: str) -> Dict[str, Any]:
+    def get_sheet_state(self, sheet_id: str) -> dict[str, Any]:
         return {
             "inputs": self.get_inputs(sheet_id),
             "results": self.get_all_results(sheet_id),
@@ -405,5 +405,5 @@ class SessionState:
     def create_session(self, graph_name: str) -> str:
         return self.create_sheet("local", graph_name)
 
-    def get_or_create_session(self, session_id: Optional[str], graph_name: str) -> str:
+    def get_or_create_session(self, session_id: str | None, graph_name: str) -> str:
         return self.get_or_create_sheet("local", graph_name, session_id)

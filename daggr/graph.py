@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import difflib
-from typing import Dict, List, Optional, Sequence
+from collections.abc import Sequence
 
 import networkx as nx
 
@@ -10,32 +10,48 @@ from daggr.node import Node
 from daggr.port import Port
 
 
-def _suggest_similar(invalid: str, valid_options: set) -> Optional[str]:
+def _suggest_similar(invalid: str, valid_options: set) -> str | None:
     matches = difflib.get_close_matches(invalid, valid_options, n=1, cutoff=0.6)
     return matches[0] if matches else None
 
 
 class Graph:
-    def __init__(self, name: str, nodes: Optional[Sequence[Node]] = None):
+    def __init__(
+        self,
+        name: str,
+        nodes: Sequence[Node] | None = None,
+        persist_key: str | bool | None = None,
+    ):
         """
         Create a new Graph.
 
         Args:
-            name: A unique identifier for this graph. Required for persistence -
-                  each daggr app needs a unique name so that saved data (sheets,
-                  inputs, results) can be associated with the correct app.
+            name: Display name for this graph shown in the UI.
             nodes: Optional list of nodes to add to the graph.
+            persist_key: Unique key used to store this graph's data in the database.
+                         If not provided, derived from name by converting to lowercase
+                         and replacing spaces/special chars with underscores.
+                         Set to False to disable persistence entirely.
+                         Use a custom string to ensure persistence works correctly
+                         if you change the display name later.
         """
         if not name or not isinstance(name, str):
             raise ValueError(
-                "Graph requires a unique 'name' parameter. This is needed to persist "
-                "data (sheets, inputs, results) uniquely across different daggr apps. "
-                "Example: Graph(name='my-podcast-generator', nodes=[...])"
+                "Graph requires a 'name' parameter. "
+                "Example: Graph(name='My Podcast Generator', nodes=[...])"
             )
         self.name = name
-        self.nodes: Dict[str, Node] = {}
+        if persist_key is False:
+            self.persist_key = None
+        elif persist_key:
+            self.persist_key = persist_key
+        else:
+            import re
+
+            self.persist_key = re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
+        self.nodes: dict[str, Node] = {}
         self._nx_graph = nx.DiGraph()
-        self._edges: List[Edge] = []
+        self._edges: list[Edge] = []
 
         if nodes:
             for node in nodes:
@@ -93,17 +109,17 @@ class Graph:
             self._edges.pop()
             raise ValueError("Connection would create a cycle in the DAG")
 
-    def get_entry_nodes(self) -> List[Node]:
+    def get_entry_nodes(self) -> list[Node]:
         entry_nodes = []
         for node_name in self.nodes:
             if self._nx_graph.in_degree(node_name) == 0:
                 entry_nodes.append(self.nodes[node_name])
         return entry_nodes
 
-    def get_execution_order(self) -> List[str]:
+    def get_execution_order(self) -> list[str]:
         return list(nx.topological_sort(self._nx_graph))
 
-    def get_connections(self) -> List[tuple]:
+    def get_connections(self) -> list[tuple]:
         return [edge.as_tuple() for edge in self._edges]
 
     def _validate_edges(self) -> None:

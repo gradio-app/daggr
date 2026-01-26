@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from daggr.node import Node
@@ -43,7 +43,7 @@ class Port:
 
 
 class ScatteredPort:
-    def __init__(self, port: Port, item_key: Optional[str] = None):
+    def __init__(self, port: Port, item_key: str | None = None):
         self.port = port
         self.item_key = item_key
 
@@ -81,7 +81,7 @@ class GatheredPort:
         return f"GatheredPort({self.port})"
 
 
-PortLike = Union[Port, ScatteredPort, GatheredPort]
+PortLike = Port | ScatteredPort | GatheredPort
 
 
 def is_port(obj: Any) -> bool:

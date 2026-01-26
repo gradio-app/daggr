@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from daggr.graph import Graph
@@ -15,9 +15,9 @@ class FileValue(str):
 class SequentialExecutor:
     def __init__(self, graph: Graph):
         self.graph = graph
-        self.clients: Dict[str, Any] = {}
-        self.results: Dict[str, Any] = {}
-        self.scattered_results: Dict[str, List[Any]] = {}
+        self.clients: dict[str, Any] = {}
+        self.results: dict[str, Any] = {}
+        self.scattered_results: Dict[str, list[Any]] = {}
 
     def _get_client(self, node_name: str):
         from daggr.node import GradioNode
@@ -30,14 +30,14 @@ class SequentialExecutor:
                 self.clients[node_name] = Client(node._src, download_files=False)
         return self.clients.get(node_name)
 
-    def _get_scattered_input_edges(self, node_name: str) -> List:
+    def _get_scattered_input_edges(self, node_name: str) -> list:
         scattered = []
         for edge in self.graph._edges:
             if edge.target_node._name == node_name and edge.is_scattered:
                 scattered.append(edge)
         return scattered
 
-    def _get_gathered_input_edges(self, node_name: str) -> List:
+    def _get_gathered_input_edges(self, node_name: str) -> list:
         gathered = []
         for edge in self.graph._edges:
             if edge.target_node._name == node_name and edge.is_gathered:
@@ -46,7 +46,7 @@ class SequentialExecutor:
 
     def _prepare_inputs(
         self, node_name: str, skip_scattered: bool = False
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         inputs = {}
 
         for edge in self.graph._edges:
@@ -99,7 +99,7 @@ class SequentialExecutor:
 
         return inputs
 
-    def _execute_single_node(self, node_name: str, inputs: Dict[str, Any]) -> Any:
+    def _execute_single_node(self, node_name: str, inputs: dict[str, Any]) -> Any:
         from daggr.node import FnNode, GradioNode, InferenceNode, InteractionNode
 
         node = self.graph.nodes[node_name]
@@ -174,7 +174,7 @@ class SequentialExecutor:
 
         return traverse(data, extract_url, is_file_obj_with_meta)
 
-    def _map_gradio_result(self, node, raw_result: Any) -> Dict[str, Any]:
+    def _map_gradio_result(self, node, raw_result: Any) -> dict[str, Any]:
         if raw_result is None:
             return {}
 
@@ -197,7 +197,7 @@ class SequentialExecutor:
         else:
             return {output_ports[0]: raw_result}
 
-    def _map_fn_result(self, node, raw_result: Any) -> Dict[str, Any]:
+    def _map_fn_result(self, node, raw_result: Any) -> dict[str, Any]:
         if raw_result is None:
             return {}
 
@@ -221,7 +221,7 @@ class SequentialExecutor:
             return {output_ports[0]: raw_result}
 
     def execute_node(
-        self, node_name: str, user_inputs: Optional[Dict[str, Any]] = None
+        self, node_name: str, user_inputs: Optional[dict[str, Any]] = None
     ) -> Any:
         node = self.graph.nodes[node_name]
         scattered_edges = self._get_scattered_input_edges(node_name)
@@ -252,9 +252,9 @@ class SequentialExecutor:
     def _execute_scattered_node(
         self,
         node_name: str,
-        scattered_edges: List,
-        user_inputs: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, List[Any]]:
+        scattered_edges: list,
+        user_inputs: Optional[dict[str, Any]] = None,
+    ) -> Dict[str, list[Any]]:
         first_edge = scattered_edges[0]
         source_name = first_edge.source_node._name
         source_port = first_edge.source_port
@@ -295,7 +295,7 @@ class SequentialExecutor:
         return {"_scattered_results": results, "_items": items}
 
     def execute_scattered_item(
-        self, node_name: str, item_index: int, inputs: Optional[Dict[str, Any]] = None
+        self, node_name: str, item_index: int, inputs: Optional[dict[str, Any]] = None
     ) -> Any:
         scattered_edges = self._get_scattered_input_edges(node_name)
         if not scattered_edges:
@@ -340,7 +340,7 @@ class SequentialExecutor:
 
         return result
 
-    def execute_all(self, entry_inputs: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    def execute_all(self, entry_inputs: Dict[str, dict[str, Any]]) -> dict[str, Any]:
         execution_order = self.graph.get_execution_order()
         self.results = {}
 
