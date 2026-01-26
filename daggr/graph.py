@@ -158,7 +158,11 @@ class Graph:
             raise ValueError("Invalid port connections:\n  - " + "\n  - ".join(errors))
 
     def launch(
-        self, host: str = "127.0.0.1", port: int = 7860, share: bool = False, **kwargs
+        self,
+        host: str = "127.0.0.1",
+        port: int = 7860,
+        share: bool | None = None,
+        **kwargs,
     ):
         from daggr.server import DaggrServer
 
