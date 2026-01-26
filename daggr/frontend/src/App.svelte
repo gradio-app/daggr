@@ -33,6 +33,7 @@
 	let nodeExecutionTimes = $state<Record<string, number>>({});
 	let nodeStartTimes = $state<Record<string, number>>({});
 	let nodeAvgTimes = $state<Record<string, { total: number; count: number }>>({});
+	let nodeErrors = $state<Record<string, string>>({});
 	let timerTick = $state(0);
 	let hfUser = $state<{ username: string; fullname: string; avatar_url: string } | null>(null);
 
@@ -45,6 +46,7 @@
 	let editingSheetName = $state(false);
 	let editSheetNameValue = $state('');
 	let saveDebounceTimer: number | null = null;
+	let transformDebounceTimer: number | null = null;
 
 	const globalProcessedSet = new Set<string>();
 	let timerInterval: number | null = null;
@@ -176,6 +178,21 @@
 		selectedResultIndex = {};
 		inputValues = {};
 		itemListValues = {};
+		pendingRunIds = {};
+		nodeStartTimes = {};
+		nodeExecutionTimes = {};
+		nodeErrors = {};
+		globalProcessedSet.clear();
+		if (timerInterval) {
+			clearInterval(timerInterval);
+			timerInterval = null;
+		}
+		if (transformDebounceTimer) {
+			clearTimeout(transformDebounceTimer);
+			transformDebounceTimer = null;
+		}
+		timerTick = 0;
+		transform = { x: 0, y: 0, scale: 1 };
 		
 		if (ws && wsConnected) {
 			ws.send(JSON.stringify({ action: 'set_sheet', sheet_id: sheetId }));
@@ -282,14 +299,32 @@
 			if (data.data.inputs) {
 				inputValues = data.data.inputs;
 			}
+			
+			if (data.data.transform) {
+				transform = {
+					x: data.data.transform.x ?? 0,
+					y: data.data.transform.y ?? 0,
+					scale: data.data.transform.scale ?? 1
+				};
+			}
 		} else if (data.type === 'node_started') {
 			const startedNode = data.started_node;
 			if (startedNode) {
 				nodeStartTimes[startedNode] = Date.now();
+				delete nodeErrors[startedNode];
 				startTimer();
 			}
 		} else if (data.type === 'error' && data.error) {
 			console.error('[daggr] server error:', data.error);
+			const errorNode = data.node || data.completed_node;
+			if (errorNode) {
+				nodeErrors[errorNode] = data.error;
+				delete nodeStartTimes[errorNode];
+				if (pendingRunIds[errorNode]) {
+					pendingRunIds[errorNode] = [];
+				}
+				stopTimerIfNoRunning();
+			}
 		} else if (data.type === 'node_complete' || data.type === 'error') {
 			const runId = data.run_id;
 			const completedNode = data.completed_node;
@@ -388,6 +423,10 @@
 				clearTimeout(saveDebounceTimer);
 				saveDebounceTimer = null;
 			}
+			if (transformDebounceTimer) {
+				clearTimeout(transformDebounceTimer);
+				transformDebounceTimer = null;
+			}
 			if (ws) {
 				ws.onclose = null;
 				ws.onerror = null;
@@ -434,6 +473,25 @@
 				}));
 			}
 		}, 500);
+	}
+
+	function debounceSaveTransform() {
+		if (!canPersist || !currentSheetId) return;
+		
+		if (transformDebounceTimer) {
+			clearTimeout(transformDebounceTimer);
+		}
+		
+		transformDebounceTimer = window.setTimeout(() => {
+			if (ws && wsConnected) {
+				ws.send(JSON.stringify({
+					action: 'save_transform',
+					x: transform.x,
+					y: transform.y,
+					scale: transform.scale
+				}));
+			}
+		}, 300);
 	}
 
 	async function handleInputChange(nodeId: string, portName: string, value: any) {
@@ -616,10 +674,12 @@
 
 	function zoomIn() {
 		transform.scale = Math.min(3, transform.scale * 1.2);
+		debounceSaveTransform();
 	}
 
 	function zoomOut() {
 		transform.scale = Math.max(0.2, transform.scale / 1.2);
+		debounceSaveTransform();
 	}
 
 	function handleMouseDown(e: MouseEvent) {
@@ -637,7 +697,10 @@
 	}
 
 	function handleMouseUp() {
-		isPanning = false;
+		if (isPanning) {
+			isPanning = false;
+			debounceSaveTransform();
+		}
 	}
 
 	function handleWheel(e: WheelEvent) {
@@ -681,6 +744,7 @@
 				y: transform.y - e.deltaY
 			};
 		}
+		debounceSaveTransform();
 	}
 
 	function handleRunToNode(e: MouseEvent, nodeName: string) {
@@ -781,8 +845,12 @@
 		}
 	}
 
-	function getNodeTimeDisplay(nodeName: string): { text: string; isRunning: boolean } | null {
+	function getNodeTimeDisplay(nodeName: string): { text: string; isRunning: boolean; isError: boolean } | null {
 		void timerTick;
+		
+		if (nodeErrors[nodeName]) {
+			return { text: 'Error', isRunning: false, isError: true };
+		}
 		
 		const isRunning = (pendingRunIds[nodeName]?.length ?? 0) > 0;
 		const startTime = nodeStartTimes[nodeName];
@@ -793,13 +861,13 @@
 		if (isRunning && startTime) {
 			const elapsed = Date.now() - startTime;
 			if (avgTime) {
-				return { text: `${formatTime(elapsed)}/${formatTime(avgTime)}`, isRunning: true };
+				return { text: `${formatTime(elapsed)}/${formatTime(avgTime)}`, isRunning: true, isError: false };
 			}
-			return { text: formatTime(elapsed), isRunning: true };
+			return { text: formatTime(elapsed), isRunning: true, isError: false };
 		}
 		
 		if (finalTime != null) {
-			return { text: formatTime(finalTime), isRunning: false };
+			return { text: formatTime(finalTime), isRunning: false, isError: false };
 		}
 		
 		return null;
@@ -869,7 +937,7 @@
 				style="left: {node.x}px; top: {node.y}px; width: {NODE_WIDTH}px;"
 			>
 				{#if timeDisplay}
-					<div class="exec-time" class:running={timeDisplay.isRunning}>{timeDisplay.text}</div>
+					<div class="exec-time" class:running={timeDisplay.isRunning} class:error={timeDisplay.isError}>{timeDisplay.text}</div>
 				{/if}
 				<div class="node-header">
 					<span class="type-badge" style={getBadgeStyle(node.type)}>{node.type}</span>
@@ -919,7 +987,12 @@
 					</div>
 				</div>
 
-				{#if componentsToRender.length > 0}
+				{#if nodeErrors[node.name]}
+					<div class="node-error">
+						<div class="node-error-label">Error</div>
+						<div class="node-error-message">{nodeErrors[node.name]}</div>
+					</div>
+				{:else if componentsToRender.length > 0}
 					<div class="embedded-components">
 						{#each componentsToRender as comp (comp.port_name)}
 							<EmbeddedComponent
@@ -1416,6 +1489,11 @@
 		color: #f97316;
 	}
 
+	.exec-time.error {
+		color: #ef4444;
+		font-weight: 600;
+	}
+
 	.node-header {
 		display: flex;
 		align-items: center;
@@ -1548,6 +1626,32 @@
 		font-weight: 500;
 		color: #888;
 		font-family: 'SF Mono', Monaco, monospace;
+	}
+
+	.node-error {
+		padding: 8px 10px;
+		border-top: 1px solid rgba(239, 68, 68, 0.2);
+		background: rgba(239, 68, 68, 0.05);
+		max-height: 200px;
+		overflow-y: auto;
+	}
+
+	.node-error-label {
+		font-size: 10px;
+		font-weight: 600;
+		color: #ef4444;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		margin-bottom: 4px;
+	}
+
+	.node-error-message {
+		font-size: 11px;
+		color: #b91c1c;
+		font-family: 'SF Mono', Monaco, monospace;
+		white-space: pre-wrap;
+		word-break: break-word;
+		line-height: 1.4;
 	}
 
 	.embedded-components {

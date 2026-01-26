@@ -17,16 +17,24 @@ class SessionState:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
+        self._migrate_legacy_schema(cursor)
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS sheets (
                 sheet_id TEXT PRIMARY KEY,
                 user_id TEXT NOT NULL,
                 graph_name TEXT NOT NULL,
                 name TEXT,
+                transform TEXT,
                 created_at TEXT,
                 updated_at TEXT
             )
         """)
+
+        cursor.execute("PRAGMA table_info(sheets)")
+        columns = [col[1] for col in cursor.fetchall()]
+        if "transform" not in columns:
+            cursor.execute("ALTER TABLE sheets ADD COLUMN transform TEXT")
 
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_sheets_user_graph 
@@ -67,34 +75,73 @@ class SessionState:
             ON node_results(sheet_id, node_name)
         """)
 
-        self._migrate_legacy_schema(cursor)
-
         conn.commit()
         conn.close()
 
     def _migrate_legacy_schema(self, cursor):
         cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='sessions'"
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='node_inputs'"
         )
         if cursor.fetchone():
-            cursor.execute("PRAGMA table_info(sessions)")
+            cursor.execute("PRAGMA table_info(node_inputs)")
             columns = [col[1] for col in cursor.fetchall()]
-            if "user_id" not in columns:
+            if "session_id" in columns and "sheet_id" not in columns:
+                cursor.execute("ALTER TABLE node_inputs RENAME TO _node_inputs_old")
+                cursor.execute("ALTER TABLE node_results RENAME TO _node_results_old")
+                cursor.execute("ALTER TABLE sessions RENAME TO _sessions_old")
+
                 cursor.execute("""
-                    INSERT OR IGNORE INTO sheets (sheet_id, user_id, graph_name, name, created_at, updated_at)
+                    CREATE TABLE sheets (
+                        sheet_id TEXT PRIMARY KEY,
+                        user_id TEXT NOT NULL,
+                        graph_name TEXT NOT NULL,
+                        name TEXT,
+                        created_at TEXT,
+                        updated_at TEXT
+                    )
+                """)
+                cursor.execute("""
+                    CREATE TABLE node_inputs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        sheet_id TEXT,
+                        node_name TEXT,
+                        port_name TEXT,
+                        value TEXT,
+                        updated_at TEXT,
+                        FOREIGN KEY (sheet_id) REFERENCES sheets(sheet_id) ON DELETE CASCADE,
+                        UNIQUE(sheet_id, node_name, port_name)
+                    )
+                """)
+                cursor.execute("""
+                    CREATE TABLE node_results (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        sheet_id TEXT,
+                        node_name TEXT,
+                        result TEXT,
+                        created_at TEXT,
+                        FOREIGN KEY (sheet_id) REFERENCES sheets(sheet_id) ON DELETE CASCADE
+                    )
+                """)
+
+                cursor.execute("""
+                    INSERT INTO sheets (sheet_id, user_id, graph_name, name, created_at, updated_at)
                     SELECT session_id, 'local', graph_name, 'Migrated Sheet', created_at, updated_at
-                    FROM sessions
+                    FROM _sessions_old
                 """)
                 cursor.execute("""
-                    INSERT OR IGNORE INTO node_inputs (sheet_id, node_name, port_name, value, updated_at)
+                    INSERT INTO node_inputs (sheet_id, node_name, port_name, value, updated_at)
                     SELECT session_id, node_name, port_name, value, updated_at
-                    FROM node_inputs WHERE session_id IN (SELECT session_id FROM sessions)
+                    FROM _node_inputs_old
                 """)
                 cursor.execute("""
-                    INSERT OR IGNORE INTO node_results (sheet_id, node_name, result, created_at)
+                    INSERT INTO node_results (sheet_id, node_name, result, created_at)
                     SELECT session_id, node_name, result, created_at
-                    FROM node_results WHERE session_id IN (SELECT session_id FROM sessions)
+                    FROM _node_results_old
                 """)
+
+                cursor.execute("DROP TABLE _sessions_old")
+                cursor.execute("DROP TABLE _node_inputs_old")
+                cursor.execute("DROP TABLE _node_results_old")
 
     def get_effective_user_id(self, hf_user: Optional[Dict] = None) -> Optional[str]:
         is_on_spaces = os.environ.get("SPACE_ID") is not None
@@ -162,22 +209,43 @@ class SessionState:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute(
-            """SELECT sheet_id, user_id, graph_name, name, created_at, updated_at 
+            """SELECT sheet_id, user_id, graph_name, name, transform, created_at, updated_at 
                FROM sheets WHERE sheet_id = ?""",
             (sheet_id,),
         )
         row = cursor.fetchone()
         conn.close()
         if row:
+            transform = None
+            if row[4]:
+                try:
+                    transform = json.loads(row[4])
+                except (json.JSONDecodeError, TypeError):
+                    pass
             return {
                 "sheet_id": row[0],
                 "user_id": row[1],
                 "graph_name": row[2],
                 "name": row[3],
-                "created_at": row[4],
-                "updated_at": row[5],
+                "transform": transform,
+                "created_at": row[5],
+                "updated_at": row[6],
             }
         return None
+
+    def save_transform(self, sheet_id: str, x: float, y: float, scale: float) -> bool:
+        now = datetime.now().isoformat()
+        transform = json.dumps({"x": x, "y": y, "scale": scale})
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE sheets SET transform = ?, updated_at = ? WHERE sheet_id = ?",
+            (transform, now, sheet_id),
+        )
+        updated = cursor.rowcount > 0
+        conn.commit()
+        conn.close()
+        return updated
 
     def rename_sheet(self, sheet_id: str, new_name: str) -> bool:
         now = datetime.now().isoformat()

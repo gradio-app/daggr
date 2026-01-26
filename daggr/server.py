@@ -175,6 +175,7 @@ class DaggrServer:
 
                             persisted_inputs = {}
                             persisted_results: Dict[str, List[Any]] = {}
+                            persisted_transform = None
 
                             if user_id and sheet_id:
                                 sheet = self.state.get_sheet(sheet_id)
@@ -183,6 +184,7 @@ class DaggrServer:
                                     state = self.state.get_sheet_state(sheet_id)
                                     persisted_inputs = state.get("inputs", {})
                                     persisted_results = state.get("results", {})
+                                    persisted_transform = sheet.get("transform")
 
                             node_results = {}
                             for node_name, results_list in persisted_results.items():
@@ -197,6 +199,7 @@ class DaggrServer:
                             graph_data["sheet_id"] = current_sheet_id
                             graph_data["user_id"] = user_id
                             graph_data["persisted_results"] = persisted_results
+                            graph_data["transform"] = persisted_transform
 
                             await websocket.send_json(
                                 {"type": "graph", "data": graph_data}
@@ -222,6 +225,13 @@ class DaggrServer:
                                 await websocket.send_json(
                                     {"type": "input_saved", "node_id": node_id}
                                 )
+
+                    elif action == "save_transform":
+                        if user_id and current_sheet_id:
+                            x = data.get("x", 0)
+                            y = data.get("y", 0)
+                            scale = data.get("scale", 1)
+                            self.state.save_transform(current_sheet_id, x, y, scale)
 
                     elif action == "set_sheet":
                         sheet_id = data.get("sheet_id")
@@ -945,6 +955,33 @@ class DaggrServer:
             print(f"[ERROR] Failed to save data URL: {e}")
             return data_url
 
+    def _convert_urls_to_file_values(self, data: Any) -> Any:
+        from daggr.executor import FileValue
+
+        if isinstance(data, str):
+            if data.startswith(("http://", "https://", "/")) and any(
+                data.lower().endswith(ext)
+                for ext in (
+                    ".png",
+                    ".jpg",
+                    ".jpeg",
+                    ".gif",
+                    ".webp",
+                    ".wav",
+                    ".mp3",
+                    ".webm",
+                    ".mp4",
+                    ".ogg",
+                )
+            ):
+                return FileValue(data)
+            return data
+        elif isinstance(data, dict):
+            return {k: self._convert_urls_to_file_values(v) for k, v in data.items()}
+        elif isinstance(data, list):
+            return [self._convert_urls_to_file_values(item) for item in data]
+        return data
+
     def _execute_to_node(
         self,
         target_node: str,
@@ -991,7 +1028,9 @@ class DaggrServer:
                 else:
                     cached = self.state.get_latest_result(session_id, node_name)
                 if cached is not None:
-                    existing_results[node_name] = cached
+                    existing_results[node_name] = self._convert_urls_to_file_values(
+                        cached
+                    )
 
         self.executor.results = dict(existing_results)
 
@@ -1075,7 +1114,9 @@ class DaggrServer:
                 else:
                     cached = self.state.get_latest_result(sheet_id, node_name)
                 if cached is not None:
-                    existing_results[node_name] = cached
+                    existing_results[node_name] = self._convert_urls_to_file_values(
+                        cached
+                    )
 
         self.executor.results = dict(existing_results)
 
