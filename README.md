@@ -258,6 +258,54 @@ This generates a temporary public URL (expires in 1 week) using Gradio's tunneli
 
 For permanent hosting, you can deploy Daggr apps on [Hugging Face Spaces](https://huggingface.co/spaces) using the Gradio SDK. Just create a new Space with the Gradio SDK, add your workflow code to `app.py`, and include `daggr` in your `requirements.txt`.
 
+## Persistence and Sheets
+
+Daggr automatically saves your workflow state—input values, node results, and canvas position—so you can pick up where you left off after a page reload.
+
+### Sheets
+
+**Sheets** are like separate workspaces within a single Daggr app. Each sheet has its own:
+- Input values for all nodes
+- Cached results from previous runs  
+- Canvas zoom and pan position
+
+Use sheets to work on multiple projects within the same workflow. For example, in a podcast generator app, each sheet could represent a different podcast episode you're working on.
+
+The sheet selector appears in the title bar. Click to switch between sheets, create new ones, rename them (double-click), or delete them.
+
+### How Persistence Works
+
+| Environment | User Status | Persistence |
+|-------------|-------------|-------------|
+| **Local** | Not logged in | ✅ Saved as "local" user |
+| **Local** | HF logged in | ✅ Saved under your HF username |
+
+When running locally, your data is stored in a SQLite database (`.daggr_sessions.db`) in the current directory.
+
+### The `persist_key` Parameter
+
+By default, the `persist_key` is derived from your graph's `name`:
+
+```python
+Graph(name="My Podcast Generator")  # persist_key = "my_podcast_generator"
+```
+
+If you later rename your app but want to keep the existing saved data, set `persist_key` explicitly:
+
+```python
+Graph(name="Podcast Generator v2", persist_key="my_podcast_generator")
+```
+
+### Disabling Persistence
+
+For scratch workflows or demos where you don't want data saved:
+
+```python
+Graph(name="Quick Demo", persist_key=False)
+```
+
+This disables all persistence—no sheets UI, no saved state.
+
 ## Hugging Face Authentication
 
 Daggr automatically uses your local Hugging Face token for both `GradioNode` and `InferenceNode`. This enables:
