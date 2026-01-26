@@ -32,7 +32,9 @@ background_remover = GradioNode(
     },
     outputs={
         "original_image": None,  # Original image is returned but not displayed
-        "final_image": gr.Image(label="Final Image"),  # Transparent bg image is displayed
+        "final_image": gr.Image(
+            label="Final Image"
+        ),  # Transparent bg image is displayed
     },
 )
 
