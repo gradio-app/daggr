@@ -5,11 +5,26 @@ import os
 import sqlite3
 import uuid
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 
+def get_daggr_cache_dir() -> Path:
+    cache_dir = Path.home() / ".cache" / "huggingface" / "daggr"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    return cache_dir
+
+
+def get_daggr_files_dir() -> Path:
+    files_dir = get_daggr_cache_dir() / "files"
+    files_dir.mkdir(parents=True, exist_ok=True)
+    return files_dir
+
+
 class SessionState:
-    def __init__(self, db_path: str = ".daggr_sessions.db"):
+    def __init__(self, db_path: str | None = None):
+        if db_path is None:
+            db_path = str(get_daggr_cache_dir() / "sessions.db")
         self.db_path = db_path
         self._init_db()
 

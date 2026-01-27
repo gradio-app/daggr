@@ -18,30 +18,30 @@ host_voice = GradioNode(
             lines=3,
         ),
         "language": "English",
-        "text": "Hi! I'm the host of podcast. It's going to be a great episode!",
+        "text": "Hi! I'm the host of this podcast. It's going to be a great episode!",
     },
     outputs={
         "audio": gr.Audio(label="Host Voice"),
         "status": None,
     },
-) 
+)
 
 
 guest_voice = GradioNode(
-    space_or_url="abidlabs/tts",
+    space_or_url="Qwen/Qwen3-TTS",  # Currently mocked. But this would be a call to e.g. Qwen/Qwen3-TTS
     api_name="/generate_voice_design",
     inputs={
         "voice_description": gr.Textbox(
             label="Guest Voice Description",
-            value="Energetic, friendly young voice with American accent...",
+            value="Energetic, friendly young woman with American accent...",
             lines=3,
         ),
-        "language": "Auto",
-        "text": "Hi! I'm the guest of podcast. Super excited to be here!",
+        "language": "English",
+        "text": "Hi! I'm the guest on this podcast. Super excited to be here!",
     },
     outputs={
         "audio": gr.Audio(label="Guest Voice"),
-        "status": gr.Text(visible=False),
+        "status": None,
     },
 )
 

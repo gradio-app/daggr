@@ -122,7 +122,7 @@
 	<div class="gr-header">
 		<span class="gr-label">{label}</span>
 		<div class="audio-actions">
-			{#if editable && !isRecording}
+			{#if editable && !isRecording && !src}
 				<button class="action-btn" onclick={triggerUpload} title="Upload audio">
 					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 						<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>

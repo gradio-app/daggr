@@ -207,7 +207,9 @@ class DaggrServer:
                             graph_data["session_id"] = session_id
                             graph_data["sheet_id"] = current_sheet_id
                             graph_data["user_id"] = user_id
-                            graph_data["persisted_results"] = persisted_results
+                            graph_data["persisted_results"] = (
+                                self._transform_file_paths(persisted_results)
+                            )
                             graph_data["transform"] = persisted_transform
 
                             await websocket.send_json(
@@ -307,11 +309,18 @@ class DaggrServer:
         async def serve_local_file(path: str):
             import tempfile
 
+            from daggr.state import get_daggr_cache_dir
+
             file_path = Path("/") / path
             temp_dir = Path(tempfile.gettempdir()).resolve()
+            daggr_cache = get_daggr_cache_dir().resolve()
+
             try:
                 resolved = file_path.resolve()
-                if not str(resolved).startswith(str(temp_dir)):
+                is_allowed = str(resolved).startswith(str(temp_dir)) or str(
+                    resolved
+                ).startswith(str(daggr_cache))
+                if not is_allowed:
                     return Response(status_code=403)
             except (ValueError, OSError):
                 return Response(status_code=403)
@@ -476,6 +485,15 @@ class DaggrServer:
             if Path(value).exists():
                 return f"/file{value}"
         return value
+
+    def _transform_file_paths(self, data: Any) -> Any:
+        if isinstance(data, str):
+            return self._file_to_url(data)
+        elif isinstance(data, dict):
+            return {k: self._transform_file_paths(v) for k, v in data.items()}
+        elif isinstance(data, list):
+            return [self._transform_file_paths(item) for item in data]
+        return data
 
     def _build_input_components(self, node) -> list[dict[str, Any]]:
         if not node._input_components:
@@ -912,8 +930,7 @@ class DaggrServer:
             selected_variant = None
             if isinstance(node, ChoiceNode):
                 variants = [
-                    self._build_variant_data(v, input_values)
-                    for v in node._variants
+                    self._build_variant_data(v, input_values) for v in node._variants
                 ]
                 selected_variant = input_values.get(node_id, {}).get(
                     "_selected_variant", 0
@@ -1379,6 +1396,7 @@ class DaggrServer:
             print(f"\n  daggr running at {local_url}\n")
             if open_browser:
                 import threading
+
                 threading.Timer(0.5, lambda: webbrowser.open_new_tab(local_url)).start()
             uvicorn.run(self.app, host=host, port=port, **kwargs)
 
