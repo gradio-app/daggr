@@ -559,6 +559,17 @@ def _run_with_reload(script_path: Path, host: str, port: int, watch_daggr: bool)
         print(f"    • {d}")
     print()
 
+    import threading
+    import webbrowser
+
+    def open_browser():
+        import time
+
+        time.sleep(1.0)
+        webbrowser.open_new_tab(f"http://{host}:{port}")
+
+    threading.Thread(target=open_browser, daemon=True).start()
+
     uvicorn.run(
         "daggr.cli:_create_app",
         factory=True,

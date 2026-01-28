@@ -37,7 +37,7 @@ class DaggrServer:
         try:
             from huggingface_hub import whoami
 
-            info = whoami(token=token)
+            info = whoami(token=token, cache=True)
             return {
                 "username": info.get("name"),
                 "fullname": info.get("fullname"),
