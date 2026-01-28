@@ -570,6 +570,18 @@ class FnNode(Node):
     - Single value: maps to the first output port
     - Tuple: each element maps to the corresponding output port in order
 
+    Concurrency:
+        By default, FnNodes execute sequentially (one at a time per session)
+        to prevent resource contention. Use the concurrency parameters to
+        allow parallel execution:
+
+        - concurrent=True: Allow this node to run in parallel with others
+        - concurrency_group: Group nodes that share a resource (e.g., GPU)
+        - max_concurrent: Max parallel executions within a group (default: 1)
+
+        Note: GradioNode and InferenceNode always run concurrently since they
+        are external API calls. Prefer these over FnNode when possible.
+
     Args:
         fn: The Python function to wrap.
         name: Optional display name. Defaults to the function name.
@@ -577,6 +589,9 @@ class FnNode(Node):
             connections or UI components.
         outputs: Optional dict mapping output port names to UI components
             or ItemList schemas.
+        concurrent: If True, allow parallel execution. Default: False.
+        concurrency_group: Name of a group sharing a concurrency limit.
+        max_concurrent: Max parallel executions in the group. Default: 1.
 
     Example:
         >>> def process_text(text: str) -> tuple[str, int]:
@@ -585,6 +600,12 @@ class FnNode(Node):
         ...     process_text,
         ...     outputs={"uppercase": gr.Textbox(), "length": gr.Number()}
         ... )
+
+        >>> # Allow parallel execution
+        >>> node = FnNode(my_func, concurrent=True)
+
+        >>> # Share GPU with other nodes (max 2 concurrent)
+        >>> node = FnNode(gpu_func, concurrency_group="gpu", max_concurrent=2)
     """
 
     def __init__(
@@ -595,11 +616,17 @@ class FnNode(Node):
         outputs: dict[str, Any] | None = None,
         preprocess: Callable[[dict], dict] | None = None,
         postprocess: Callable[..., Any] | None = None,
+        concurrent: bool = False,
+        concurrency_group: str | None = None,
+        max_concurrent: int = 1,
     ):
         super().__init__(name)
         self._fn = fn
         self._preprocess = preprocess
         self._postprocess = postprocess
+        self._concurrent = concurrent
+        self._concurrency_group = concurrency_group
+        self._max_concurrent = max_concurrent
 
         if not self._name:
             self._name = self._fn.__name__

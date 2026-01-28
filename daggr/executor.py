@@ -1,9 +1,17 @@
+"""Executor for daggr graphs.
+
+This module provides the AsyncExecutor for running graph nodes with proper
+concurrency control and session isolation.
+"""
+
 from __future__ import annotations
 
+import asyncio
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from daggr.graph import Graph
+    from daggr.session import ExecutionSession
 
 
 class FileValue(str):
@@ -47,50 +55,39 @@ def _postprocess_inference_result(task: str | None, result: Any) -> Any:
     if result is None:
         return None
 
-    # Many tasks return special output objects that need unwrapping
     if task == "automatic-speech-recognition":
-        # Returns AutomaticSpeechRecognitionOutput with .text attribute
         return getattr(result, "text", result)
     elif task == "translation":
-        # Returns TranslationOutput with .translation_text attribute
         return getattr(result, "translation_text", result)
     elif task == "summarization":
-        # Returns SummarizationOutput with .summary_text attribute
         return getattr(result, "summary_text", result)
     elif task in (
         "audio-classification",
         "image-classification",
         "text-classification",
     ):
-        # Returns list of ClassificationOutput objects with .label and .score
         if isinstance(result, list) and result:
-            # Return as dict suitable for gr.Label
             return {item.label: item.score for item in result if hasattr(item, "label")}
         return result
     elif task == "image-to-text":
-        # Returns ImageToTextOutput with .generated_text attribute
         return getattr(result, "generated_text", result)
     elif task == "question-answering":
-        # Returns QuestionAnsweringOutput with .answer and .score
         if hasattr(result, "answer"):
             return result.answer
         return result
     elif task in ("text-to-speech", "text-to-audio"):
-        # Returns raw bytes - save to file
         if isinstance(result, bytes):
             file_path = get_daggr_files_dir() / f"{uuid.uuid4()}.wav"
             file_path.write_bytes(result)
             return str(file_path)
         return result
     elif task in ("text-to-image", "image-to-image"):
-        # Returns PIL Image - save to file
-        # Some providers return a dict with 'images' key
         if isinstance(result, dict):
             if "images" in result:
                 result = result["images"][0] if result["images"] else result
             elif "image" in result:
                 result = result["image"]
-        if hasattr(result, "save"):  # PIL Image
+        if hasattr(result, "save"):
             file_path = get_daggr_files_dir() / f"{uuid.uuid4()}.png"
             result.save(file_path)
             return str(file_path)
@@ -100,7 +97,6 @@ def _postprocess_inference_result(task: str | None, result: Any) -> Any:
 
 
 def _call_inference_task(client: Any, task: str | None, inputs: dict[str, Any]) -> Any:
-    # Get the primary input based on task type
     primary_input = None
     if task in (
         "image-to-image",
@@ -119,7 +115,6 @@ def _call_inference_task(client: Any, task: str | None, inputs: dict[str, Any]) 
     ):
         primary_input = inputs.get("audio")
 
-    # Fall back to first input if no specific key found
     if primary_input is None:
         primary_input = next(iter(inputs.values()), None) if inputs else None
 
@@ -160,7 +155,6 @@ def _call_inference_task(client: Any, task: str | None, inputs: dict[str, Any]) 
     )
     method = getattr(client, method_name, None)
 
-    # Tasks that expect image/audio bytes instead of file paths
     file_input_tasks = {
         "image-to-image",
         "image-classification",
@@ -174,7 +168,6 @@ def _call_inference_task(client: Any, task: str | None, inputs: dict[str, Any]) 
         "audio-to-audio",
     }
 
-    # Read file as bytes if needed
     if task in file_input_tasks and isinstance(primary_input, str):
         primary_input = _read_file_as_bytes(primary_input)
 
@@ -204,7 +197,6 @@ def _read_file_as_bytes(file_path: str) -> bytes:
     import base64
     from pathlib import Path
 
-    # Handle data URLs
     if file_path.startswith("data:"):
         try:
             _, encoded = file_path.split(",", 1)
@@ -212,68 +204,83 @@ def _read_file_as_bytes(file_path: str) -> bytes:
         except Exception:
             pass
 
-    # Handle file paths
     path = Path(file_path)
     if path.exists():
         return path.read_bytes()
 
-    # Return as-is if already bytes or can't read
     return file_path
 
 
-class SequentialExecutor:
+class AsyncExecutor:
+    """Async executor for graph nodes.
+    
+    This executor is stateless - all state is held in the ExecutionSession.
+    It handles concurrency control:
+    - GradioNode/InferenceNode: run concurrently (external API calls)
+    - FnNode: sequential by default, configurable via concurrent/concurrency_group
+    """
+
     def __init__(self, graph: Graph):
         self.graph = graph
-        self.clients: dict[str, Any] = {}
-        self.results: dict[str, Any] = {}
-        self.scattered_results: dict[str, list[Any]] = {}
-        self.selected_variants: dict[str, int] = {}
 
-    def _get_client_for_gradio_node(self, gradio_node, cache_key: str):
+    def _get_client_for_gradio_node(
+        self, session: ExecutionSession, gradio_node, cache_key: str
+    ):
         from daggr import _client_cache
 
-        if cache_key in self.clients:
-            return self.clients[cache_key]
+        token_cache_key = f"{cache_key}__token_{hash(session.hf_token or '')}"
+        if token_cache_key in session.clients:
+            return session.clients[token_cache_key]
 
         if gradio_node._run_locally:
             from daggr.local_space import get_local_client
 
             client = get_local_client(gradio_node)
             if client is not None:
-                self.clients[cache_key] = client
+                session.clients[token_cache_key] = client
                 return client
 
-        client = _client_cache.get_client(gradio_node._src)
-        if client is None:
+        if session.hf_token:
             from gradio_client import Client
 
             client = Client(
                 gradio_node._src,
                 download_files=False,
                 verbose=False,
+                hf_token=session.hf_token,
             )
-            _client_cache.set_client(gradio_node._src, client)
+        else:
+            client = _client_cache.get_client(gradio_node._src)
+            if client is None:
+                from gradio_client import Client
 
-        self.clients[cache_key] = client
+                client = Client(
+                    gradio_node._src,
+                    download_files=False,
+                    verbose=False,
+                )
+                _client_cache.set_client(gradio_node._src, client)
+
+        session.clients[token_cache_key] = client
         return client
 
-    def _get_client(self, node_name: str):
+    def _get_client(self, session: ExecutionSession, node_name: str):
         from daggr.node import ChoiceNode, GradioNode
 
         node = self.graph.nodes[node_name]
 
         if isinstance(node, ChoiceNode):
-            variant_idx = self.selected_variants.get(node_name, 0)
+            variant_idx = session.selected_variants.get(node_name, 0)
             variant = node._variants[variant_idx]
             if isinstance(variant, GradioNode):
                 cache_key = f"{node_name}__variant_{variant_idx}"
-                return self._get_client_for_gradio_node(variant, cache_key)
+                return self._get_client_for_gradio_node(session, variant, cache_key)
             return None
 
         if not isinstance(node, GradioNode):
             return None
 
-        return self._get_client_for_gradio_node(node, node_name)
+        return self._get_client_for_gradio_node(session, node, node_name)
 
     def _get_scattered_input_edges(self, node_name: str) -> list:
         scattered = []
@@ -290,7 +297,7 @@ class SequentialExecutor:
         return gathered
 
     def _prepare_inputs(
-        self, node_name: str, skip_scattered: bool = False
+        self, session: ExecutionSession, node_name: str, skip_scattered: bool = False
     ) -> dict[str, Any]:
         inputs = {}
 
@@ -303,8 +310,8 @@ class SequentialExecutor:
                 source_output = edge.source_port
                 target_input = edge.target_port
 
-                if source_name in self.results:
-                    source_result = self.results[source_name]
+                if source_name in session.results:
+                    source_result = session.results[source_name]
 
                     if (
                         edge.is_gathered
@@ -344,7 +351,10 @@ class SequentialExecutor:
 
         return inputs
 
-    def _execute_single_node(self, node_name: str, inputs: dict[str, Any]) -> Any:
+    def _execute_single_node_sync(
+        self, session: ExecutionSession, node_name: str, inputs: dict[str, Any]
+    ) -> Any:
+        """Synchronous node execution (called from thread pool for FnNode)."""
         from daggr.node import (
             ChoiceNode,
             FnNode,
@@ -356,9 +366,9 @@ class SequentialExecutor:
         node = self.graph.nodes[node_name]
 
         if isinstance(node, ChoiceNode):
-            variant_idx = self.selected_variants.get(node_name, 0)
+            variant_idx = session.selected_variants.get(node_name, 0)
             variant = node._variants[variant_idx]
-            return self._execute_variant_node(node_name, variant, inputs)
+            return self._execute_variant_node_sync(session, node_name, variant, inputs)
 
         all_inputs = {}
         for port_name, value in node._fixed_inputs.items():
@@ -369,7 +379,7 @@ class SequentialExecutor:
         all_inputs.update(inputs)
 
         if isinstance(node, GradioNode):
-            client = self._get_client(node_name)
+            client = self._get_client(session, node_name)
             if client:
                 api_name = node._api_name or "/predict"
                 if not api_name.startswith("/"):
@@ -408,6 +418,7 @@ class SequentialExecutor:
             client = InferenceClient(
                 model=node._model_name_for_hub,
                 provider=node._provider,
+                token=session.hf_token,
             )
             inference_inputs = {
                 k: v for k, v in all_inputs.items() if k in node._input_ports
@@ -426,8 +437,12 @@ class SequentialExecutor:
 
         return result
 
-    def _execute_variant_node(
-        self, node_name: str, variant, inputs: dict[str, Any]
+    def _execute_variant_node_sync(
+        self,
+        session: ExecutionSession,
+        node_name: str,
+        variant,
+        inputs: dict[str, Any],
     ) -> Any:
         from daggr.node import FnNode, GradioNode, InferenceNode
 
@@ -440,7 +455,7 @@ class SequentialExecutor:
         all_inputs.update(inputs)
 
         if isinstance(variant, GradioNode):
-            client = self._get_client(node_name)
+            client = self._get_client(session, node_name)
             if client:
                 api_name = variant._api_name or "/predict"
                 if not api_name.startswith("/"):
@@ -481,6 +496,7 @@ class SequentialExecutor:
             client = InferenceClient(
                 model=variant._model_name_for_hub,
                 provider=variant._provider,
+                token=session.hf_token,
             )
             inference_inputs = {
                 k: v for k, v in all_inputs.items() if k in variant._input_ports
@@ -493,13 +509,157 @@ class SequentialExecutor:
 
         return result
 
+    async def execute_node(
+        self,
+        session: ExecutionSession,
+        node_name: str,
+        user_inputs: dict[str, Any] | None = None,
+    ) -> Any:
+        """Execute a single node with proper concurrency control."""
+        from daggr.node import FnNode, GradioNode, InferenceNode
+
+        node = self.graph.nodes[node_name]
+        scattered_edges = self._get_scattered_input_edges(node_name)
+
+        if scattered_edges:
+            result = await self._execute_scattered_node(
+                session, node_name, scattered_edges, user_inputs
+            )
+        else:
+            inputs = self._prepare_inputs(session, node_name)
+            if user_inputs:
+                if isinstance(user_inputs, dict):
+                    inputs.update(user_inputs)
+                else:
+                    if node._input_ports:
+                        inputs[node._input_ports[0]] = user_inputs
+                    else:
+                        inputs["input"] = user_inputs
+
+            try:
+                if isinstance(node, (GradioNode, InferenceNode)):
+                    result = await asyncio.to_thread(
+                        self._execute_single_node_sync, session, node_name, inputs
+                    )
+                elif isinstance(node, FnNode):
+                    semaphore = await session.concurrency.get_semaphore(
+                        node._concurrent,
+                        node._concurrency_group,
+                        node._max_concurrent,
+                    )
+                    if semaphore:
+                        async with semaphore:
+                            result = await asyncio.to_thread(
+                                self._execute_single_node_sync,
+                                session,
+                                node_name,
+                                inputs,
+                            )
+                    else:
+                        result = await asyncio.to_thread(
+                            self._execute_single_node_sync, session, node_name, inputs
+                        )
+                else:
+                    result = await asyncio.to_thread(
+                        self._execute_single_node_sync, session, node_name, inputs
+                    )
+            except Exception as e:
+                raise RuntimeError(f"Error executing node '{node_name}': {e}")
+
+        session.results[node_name] = result
+        return result
+
+    async def _execute_scattered_node(
+        self,
+        session: ExecutionSession,
+        node_name: str,
+        scattered_edges: list,
+        user_inputs: dict[str, Any] | None = None,
+    ) -> dict[str, list[Any]]:
+        from daggr.node import FnNode, GradioNode, InferenceNode
+
+        first_edge = scattered_edges[0]
+        source_name = first_edge.source_node._name
+        source_port = first_edge.source_port
+
+        source_result = session.results.get(source_name)
+        if source_result is None:
+            items = []
+        elif isinstance(source_result, dict) and source_port in source_result:
+            items = source_result[source_port]
+        else:
+            items = source_result
+
+        if not isinstance(items, list):
+            items = [items]
+
+        context_inputs = self._prepare_inputs(session, node_name, skip_scattered=True)
+        if user_inputs:
+            context_inputs.update(user_inputs)
+
+        node = self.graph.nodes[node_name]
+
+        async def execute_item(item, idx):
+            item_inputs = dict(context_inputs)
+            for edge in scattered_edges:
+                target_port = edge.target_port
+                item_key = edge.item_key
+                if item_key and isinstance(item, dict):
+                    item_inputs[target_port] = item.get(item_key)
+                else:
+                    item_inputs[target_port] = item
+
+            try:
+                if isinstance(node, (GradioNode, InferenceNode)):
+                    return await asyncio.to_thread(
+                        self._execute_single_node_sync, session, node_name, item_inputs
+                    )
+                elif isinstance(node, FnNode):
+                    semaphore = await session.concurrency.get_semaphore(
+                        node._concurrent,
+                        node._concurrency_group,
+                        node._max_concurrent,
+                    )
+                    if semaphore:
+                        async with semaphore:
+                            return await asyncio.to_thread(
+                                self._execute_single_node_sync,
+                                session,
+                                node_name,
+                                item_inputs,
+                            )
+                    else:
+                        return await asyncio.to_thread(
+                            self._execute_single_node_sync,
+                            session,
+                            node_name,
+                            item_inputs,
+                        )
+                else:
+                    return await asyncio.to_thread(
+                        self._execute_single_node_sync, session, node_name, item_inputs
+                    )
+            except Exception as e:
+                return {"error": str(e)}
+
+        if isinstance(node, (GradioNode, InferenceNode)):
+            tasks = [execute_item(item, i) for i, item in enumerate(items)]
+            results = await asyncio.gather(*tasks)
+        else:
+            results = []
+            for i, item in enumerate(items):
+                result = await execute_item(item, i)
+                results.append(result)
+
+        session.scattered_results[node_name] = list(results)
+        return {"_scattered_results": list(results), "_items": items}
+
     def _wrap_file_input(self, value: Any) -> Any:
         from gradio_client import handle_file
 
         if isinstance(value, FileValue):
             return handle_file(str(value))
 
-        # Handle base64 data URLs (from uploaded images/audio in the UI)
         if isinstance(value, str) and value.startswith("data:"):
             file_path = self._save_data_url_to_file(value)
             if file_path:
@@ -514,16 +674,11 @@ class SequentialExecutor:
 
         from daggr.state import get_daggr_files_dir
 
-        # Parse data URL: data:[<mediatype>][;base64],<data>
         if not data_url.startswith("data:"):
             return None
 
         try:
-            # Split header from data
             header, encoded = data_url.split(",", 1)
-
-            # Determine file extension from media type
-            # Format: data:image/png;base64 or data:audio/wav;base64
             media_type = header.split(":")[1].split(";")[0]
             ext_map = {
                 "image/png": ".png",
@@ -540,8 +695,6 @@ class SequentialExecutor:
                 "video/webm": ".webm",
             }
             ext = ext_map.get(media_type, ".bin")
-
-            # Decode and save
             data = base64.b64decode(encoded)
             file_path = get_daggr_files_dir() / f"{uuid.uuid4()}{ext}"
             file_path.write_bytes(data)
@@ -618,135 +771,72 @@ class SequentialExecutor:
         if not output_ports:
             return {"output": raw_result}
 
-        # Inference APIs typically return a single value
         return {output_ports[0]: raw_result}
+
+    async def execute_all(
+        self, session: ExecutionSession, entry_inputs: dict[str, dict[str, Any]]
+    ) -> dict[str, Any]:
+        execution_order = self.graph.get_execution_order()
+        session.results = {}
+
+        for node_name in execution_order:
+            user_input = entry_inputs.get(node_name, {})
+            await self.execute_node(session, node_name, user_input)
+
+        return session.results
+
+
+class SequentialExecutor:
+    """Legacy synchronous executor for backwards compatibility.
+    
+    This wraps the AsyncExecutor for use in synchronous contexts like node.test().
+    For production use, prefer AsyncExecutor with proper session management.
+    """
+
+    def __init__(self, graph: Graph, hf_token: str | None = None):
+        from daggr.session import ExecutionSession
+
+        self.graph = graph
+        self._async_executor = AsyncExecutor(graph)
+        self._session = ExecutionSession(graph, hf_token)
+
+    @property
+    def results(self) -> dict[str, Any]:
+        return self._session.results
+
+    @results.setter
+    def results(self, value: dict[str, Any]):
+        self._session.results = value
+
+    @property
+    def selected_variants(self) -> dict[str, int]:
+        return self._session.selected_variants
+
+    @selected_variants.setter
+    def selected_variants(self, value: dict[str, int]):
+        self._session.selected_variants = value
+
+    def set_hf_token(self, token: str | None):
+        self._session.set_hf_token(token)
 
     def execute_node(
         self, node_name: str, user_inputs: dict[str, Any] | None = None
     ) -> Any:
-        node = self.graph.nodes[node_name]
-        scattered_edges = self._get_scattered_input_edges(node_name)
-
-        if scattered_edges:
-            result = self._execute_scattered_node(
-                node_name, scattered_edges, user_inputs
+        """Synchronous wrapper around async execute_node."""
+        loop = asyncio.new_event_loop()
+        try:
+            return loop.run_until_complete(
+                self._async_executor.execute_node(self._session, node_name, user_inputs)
             )
-        else:
-            inputs = self._prepare_inputs(node_name)
-            if user_inputs:
-                if isinstance(user_inputs, dict):
-                    inputs.update(user_inputs)
-                else:
-                    if node._input_ports:
-                        inputs[node._input_ports[0]] = user_inputs
-                    else:
-                        inputs["input"] = user_inputs
-
-            try:
-                result = self._execute_single_node(node_name, inputs)
-            except Exception as e:
-                raise RuntimeError(f"Error executing node '{node_name}': {e}")
-
-        self.results[node_name] = result
-        return result
-
-    def _execute_scattered_node(
-        self,
-        node_name: str,
-        scattered_edges: list,
-        user_inputs: dict[str, Any] | None = None,
-    ) -> dict[str, list[Any]]:
-        first_edge = scattered_edges[0]
-        source_name = first_edge.source_node._name
-        source_port = first_edge.source_port
-
-        source_result = self.results.get(source_name)
-        if source_result is None:
-            items = []
-        elif isinstance(source_result, dict) and source_port in source_result:
-            items = source_result[source_port]
-        else:
-            items = source_result
-
-        if not isinstance(items, list):
-            items = [items]
-
-        context_inputs = self._prepare_inputs(node_name, skip_scattered=True)
-        if user_inputs:
-            context_inputs.update(user_inputs)
-
-        results = []
-        for item in items:
-            item_inputs = dict(context_inputs)
-            for edge in scattered_edges:
-                target_port = edge.target_port
-                item_key = edge.item_key
-                if item_key and isinstance(item, dict):
-                    item_inputs[target_port] = item.get(item_key)
-                else:
-                    item_inputs[target_port] = item
-
-            try:
-                item_result = self._execute_single_node(node_name, item_inputs)
-                results.append(item_result)
-            except Exception as e:
-                results.append({"error": str(e)})
-
-        self.scattered_results[node_name] = results
-        return {"_scattered_results": results, "_items": items}
-
-    def execute_scattered_item(
-        self, node_name: str, item_index: int, inputs: dict[str, Any] | None = None
-    ) -> Any:
-        scattered_edges = self._get_scattered_input_edges(node_name)
-        if not scattered_edges:
-            raise ValueError(f"Node '{node_name}' does not have a scattered input")
-
-        first_edge = scattered_edges[0]
-        source_name = first_edge.source_node._name
-        source_port = first_edge.source_port
-
-        source_result = self.results.get(source_name)
-        if source_result is None:
-            items = []
-        elif isinstance(source_result, dict) and source_port in source_result:
-            items = source_result[source_port]
-        else:
-            items = source_result
-
-        if not isinstance(items, list):
-            items = [items]
-
-        if item_index < 0 or item_index >= len(items):
-            raise IndexError(f"Item index {item_index} out of range")
-
-        item = items[item_index]
-        context_inputs = self._prepare_inputs(node_name, skip_scattered=True)
-        if inputs:
-            context_inputs.update(inputs)
-
-        item_inputs = dict(context_inputs)
-        for edge in scattered_edges:
-            target_port = edge.target_port
-            item_key = edge.item_key
-            if item_key and isinstance(item, dict):
-                item_inputs[target_port] = item.get(item_key)
-            else:
-                item_inputs[target_port] = item
-
-        result = self._execute_single_node(node_name, item_inputs)
-
-        if node_name in self.scattered_results:
-            self.scattered_results[node_name][item_index] = result
-
-        return result
+        finally:
+            loop.close()
 
     def execute_all(self, entry_inputs: dict[str, dict[str, Any]]) -> dict[str, Any]:
-        execution_order = self.graph.get_execution_order()
-        self.results = {}
-
-        for node_name in execution_order:
-            user_input = entry_inputs.get(node_name, {})
-            self.execute_node(node_name, user_input)
-
-        return self.results
+        """Synchronous wrapper around async execute_all."""
+        loop = asyncio.new_event_loop()
+        try:
+            return loop.run_until_complete(
+                self._async_executor.execute_all(self._session, entry_inputs)
+            )
+        finally:
+            loop.close()

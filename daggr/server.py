@@ -8,10 +8,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import uvicorn
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Header, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 
-from daggr.executor import SequentialExecutor
+from daggr.executor import AsyncExecutor, SequentialExecutor
+from daggr.session import ExecutionSession
 from daggr.state import SessionState
 
 if TYPE_CHECKING:
@@ -21,11 +22,29 @@ if TYPE_CHECKING:
 class DaggrServer:
     def __init__(self, graph: Graph):
         self.graph = graph
-        self.executor = SequentialExecutor(graph)
+        self.executor = AsyncExecutor(graph)
         self.state = SessionState()
         self.app = FastAPI(title=graph.name)
         self.connections: dict[str, WebSocket] = {}
         self._setup_routes()
+
+    def _extract_token_from_header(self, authorization: str | None) -> str | None:
+        if authorization and authorization.startswith("Bearer "):
+            return authorization[7:]
+        return None
+
+    def _validate_hf_token(self, token: str) -> dict | None:
+        try:
+            from huggingface_hub import whoami
+
+            info = whoami(token=token)
+            return {
+                "username": info.get("name"),
+                "fullname": info.get("fullname"),
+                "avatar_url": info.get("avatarUrl"),
+            }
+        except Exception:
+            return None
 
     def _setup_routes(self):
         frontend_dir = Path(__file__).parent / "frontend" / "dist"
@@ -44,8 +63,12 @@ class DaggrServer:
             return self._get_hf_user_info()
 
         @self.app.get("/api/user_info")
-        async def get_user_info():
-            hf_user = self._get_hf_user_info()
+        async def get_user_info(authorization: str | None = Header(default=None)):
+            browser_token = self._extract_token_from_header(authorization)
+            if browser_token:
+                hf_user = self._validate_hf_token(browser_token)
+            else:
+                hf_user = self._get_hf_user_info()
             user_id = self.state.get_effective_user_id(hf_user)
             is_on_spaces = os.environ.get("SPACE_ID") is not None
             persistence_enabled = self.graph.persist_key is not None
@@ -55,6 +78,30 @@ class DaggrServer:
                 "is_on_spaces": is_on_spaces,
                 "can_persist": user_id is not None and persistence_enabled,
             }
+
+        @self.app.post("/api/auth/login")
+        async def auth_login(request: Request):
+            try:
+                body = await request.json()
+                token = body.get("token")
+                if not token:
+                    return JSONResponse(
+                        {"error": "Token is required"}, status_code=400
+                    )
+                hf_user = self._validate_hf_token(token)
+                if not hf_user:
+                    return JSONResponse(
+                        {"error": "Invalid token"}, status_code=401
+                    )
+                return {"hf_user": hf_user, "success": True}
+            except Exception as e:
+                return JSONResponse(
+                    {"error": str(e)}, status_code=500
+                )
+
+        @self.app.post("/api/auth/logout")
+        async def auth_logout():
+            return {"success": True}
 
         @self.app.get("/api/sheets")
         async def list_sheets():
@@ -138,11 +185,12 @@ class DaggrServer:
 
         @self.app.post("/api/run/{node_name}")
         async def run_to_node(node_name: str, data: dict):
+            session = ExecutionSession(self.graph)
             session_id = data.get("session_id")
             input_values = data.get("inputs", {})
             selected_results = data.get("selected_results", {})
-            return self._execute_to_node(
-                node_name, session_id, input_values, selected_results
+            return await self._execute_to_node(
+                session, node_name, session_id, input_values, selected_results
             )
 
         @self.app.get("/api/schema")
@@ -165,11 +213,24 @@ class DaggrServer:
             hf_user = self._get_hf_user_info()
             user_id = self.state.get_effective_user_id(hf_user)
             current_sheet_id: str | None = None
+            
+            session = ExecutionSession(self.graph)
 
             try:
                 while True:
                     data = await websocket.receive_json()
                     action = data.get("action")
+
+                    if "hf_token" in data:
+                        browser_hf_token = data.get("hf_token")
+                        if browser_hf_token:
+                            hf_user = self._validate_hf_token(browser_hf_token)
+                            user_id = self.state.get_effective_user_id(hf_user)
+                            session.set_hf_token(browser_hf_token)
+                        else:
+                            hf_user = self._get_hf_user_info()
+                            user_id = self.state.get_effective_user_id(hf_user)
+                            session.set_hf_token(None)
 
                     if action == "run":
                         node_name = data.get("node_name")
@@ -180,6 +241,7 @@ class DaggrServer:
                         sheet_id = data.get("sheet_id") or current_sheet_id
 
                         async for result in self._execute_to_node_streaming(
+                            session,
                             node_name,
                             sheet_id,
                             input_values,
@@ -262,6 +324,7 @@ class DaggrServer:
                             sheet = self.state.get_sheet(sheet_id)
                             if sheet and sheet["user_id"] == user_id:
                                 current_sheet_id = sheet_id
+                                session.clear_results()
                                 await websocket.send_json(
                                     {"type": "sheet_set", "sheet_id": sheet_id}
                                 )
@@ -1187,8 +1250,9 @@ class DaggrServer:
             return [self._convert_urls_to_file_values(item) for item in data]
         return data
 
-    def _execute_to_node(
+    async def _execute_to_node(
         self,
+        session: ExecutionSession,
         target_node: str,
         session_id: str | None,
         input_values: dict[str, Any],
@@ -1203,7 +1267,7 @@ class DaggrServer:
             if isinstance(node, ChoiceNode):
                 node_id = node_name.replace(" ", "_").replace("-", "_")
                 variant_idx = input_values.get(node_id, {}).get("_selected_variant", 0)
-                self.executor.selected_variants[node_name] = variant_idx
+                session.selected_variants[node_name] = variant_idx
 
         ancestors = self._get_ancestors(target_node)
         nodes_to_run = ancestors + [target_node]
@@ -1243,7 +1307,7 @@ class DaggrServer:
                         cached
                     )
 
-        self.executor.results = dict(existing_results)
+        session.results = dict(existing_results)
 
         node_results = {}
         node_statuses = {}
@@ -1256,7 +1320,7 @@ class DaggrServer:
 
             node_statuses[node_name] = "running"
             user_input = entry_inputs.get(node_name, {})
-            result = self.executor.execute_node(node_name, user_input)
+            result = await self.executor.execute_node(session, node_name, user_input)
             node_results[node_name] = result
             node_statuses[node_name] = "completed"
             self.state.save_result(session_id, node_name, result)
@@ -1267,6 +1331,7 @@ class DaggrServer:
 
     async def _execute_to_node_streaming(
         self,
+        session: ExecutionSession,
         target_node: str,
         sheet_id: str | None,
         input_values: dict[str, Any],
@@ -1287,7 +1352,7 @@ class DaggrServer:
             if isinstance(node, ChoiceNode):
                 node_id = node_name.replace(" ", "_").replace("-", "_")
                 variant_idx = input_values.get(node_id, {}).get("_selected_variant", 0)
-                self.executor.selected_variants[node_name] = variant_idx
+                session.selected_variants[node_name] = variant_idx
 
         ancestors = self._get_ancestors(target_node)
         nodes_to_run = ancestors + [target_node]
@@ -1339,7 +1404,7 @@ class DaggrServer:
                         cached
                     )
 
-        self.executor.results = dict(existing_results)
+        session.results = dict(existing_results)
 
         node_results = {}
         node_statuses = {}
@@ -1352,7 +1417,7 @@ class DaggrServer:
                         node_name, result, item_list_values
                     )
                     node_results[node_name] = result
-                    self.executor.results[node_name] = result
+                    session.results[node_name] = result
                     node_statuses[node_name] = "completed"
                     continue
 
@@ -1368,15 +1433,15 @@ class DaggrServer:
                 import time
 
                 start_time = time.time()
-                result = await asyncio.to_thread(
-                    self.executor.execute_node, node_name, user_input
+                result = await self.executor.execute_node(
+                    session, node_name, user_input
                 )
                 elapsed_ms = (time.time() - start_time) * 1000
 
                 result = self._apply_item_list_edits(
                     node_name, result, item_list_values
                 )
-                self.executor.results[node_name] = result
+                session.results[node_name] = result
                 node_results[node_name] = result
                 node_statuses[node_name] = "completed"
 
@@ -1423,6 +1488,7 @@ class DaggrServer:
             body = {}
 
         input_values = body.get("inputs", {})
+        session = ExecutionSession(self.graph)
 
         subgraphs = self.graph.get_subgraphs()
         output_node_names = set(self.graph.get_output_nodes())
@@ -1466,7 +1532,7 @@ class DaggrServer:
             if isinstance(node, ChoiceNode):
                 node_id = node_name.replace(" ", "_").replace("-", "_")
                 variant_idx = input_values.get(f"{node_id}___selected_variant", 0)
-                self.executor.selected_variants[node_name] = variant_idx
+                session.selected_variants[node_name] = variant_idx
 
         execution_order = self.graph.get_execution_order()
         nodes_to_execute = [n for n in execution_order if n in target_nodes]
@@ -1485,13 +1551,13 @@ class DaggrServer:
                 if node_inputs:
                     entry_inputs[node_name] = node_inputs
 
-        self.executor.results = {}
+        session.results = {}
         node_results = {}
 
         try:
             for node_name in nodes_to_execute:
                 user_input = entry_inputs.get(node_name, {})
-                result = self.executor.execute_node(node_name, user_input)
+                result = await self.executor.execute_node(session, node_name, user_input)
                 node_results[node_name] = result
         except Exception as e:
             return JSONResponse(

@@ -209,6 +209,25 @@ node = FnNode(
 
 Note: If you return a dict or list, it will be treated as a single value (mapped to the first output port), not as a mapping to output ports.
 
+**Concurrency:** By default, FnNodes execute sequentially (one at a time per user session) to prevent resource contention from concurrent function calls. If your function is safe to run in parallel, you can enable concurrent execution:
+
+```python
+# Allow this node to run in parallel with other nodes
+node = FnNode(my_func, concurrent=True)
+
+# Share a resource limit with other nodes (e.g., GPU memory)
+gpu_node_1 = FnNode(process_image, concurrency_group="gpu", max_concurrent=2)
+gpu_node_2 = FnNode(enhance_image, concurrency_group="gpu", max_concurrent=2)
+```
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `concurrent` | `False` | If `True`, allow parallel execution |
+| `concurrency_group` | `None` | Name of a group sharing a concurrency limit |
+| `max_concurrent` | `1` | Max parallel executions in the group |
+
+> **Tip:** When possible, prefer `GradioNode` or `InferenceNode` over `FnNode`. These nodes automatically run concurrently (they're external API calls), and your Hugging Face token is automatically passed through for ZeroGPU quota tracking, private Spaces access, and gated model access.
+
 #### `InferenceNode`
 
 Calls a model via [Hugging Face Inference Providers](https://huggingface.co/docs/inference-providers/en/index). This lets you use models hosted on the Hugging Face Hub without downloading them.
@@ -231,6 +250,33 @@ llm = InferenceNode(
 **Inputs:** The expected inputs depend on the model's task type. For text generation models, use `prompt`. For other tasks, check the model's documentation on the Hub.
 
 **Outputs:** Like other nodes, output names are arbitrary and map to return values in order.
+
+> **Tip:** `InferenceNode` and `GradioNode` automatically run concurrently and pass your HF token for ZeroGPU, private Spaces, and gated models. Prefer these over `FnNode` when possible.
+
+### Node Concurrency
+
+Different node types have different concurrency behaviors:
+
+| Node Type | Concurrency | Why |
+|-----------|-------------|-----|
+| `GradioNode` | **Concurrent** | External API calls—safe to parallelize |
+| `InferenceNode` | **Concurrent** | External API calls—safe to parallelize |
+| `FnNode` | **Sequential** (default) | Local Python code may have resource constraints |
+
+**Why sequential by default for FnNode?** Local Python functions often:
+- Access shared resources (files, databases, GPU memory)
+- Use libraries that aren't thread-safe
+- Consume significant CPU/memory
+
+By running FnNodes sequentially per session, daggr prevents race conditions and resource contention. If your function is safe to run in parallel, opt in with `concurrent=True`.
+
+**Concurrency groups** let multiple nodes share a resource limit:
+
+```python
+# Both nodes share GPU—at most 2 concurrent executions total
+upscale = FnNode(upscale_image, concurrency_group="gpu", max_concurrent=2)
+enhance = FnNode(enhance_image, concurrency_group="gpu", max_concurrent=2)
+```
 
 ### Testing Nodes
 
