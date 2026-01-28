@@ -14,6 +14,8 @@
 	}: Props = $props();
 
 	let copySuccess = $state(false);
+	let containerEl: HTMLDivElement | null = $state(null);
+	let isFullscreen = $state(false);
 
 	function copyJson() {
 		const text = JSON.stringify(value, null, 2);
@@ -22,12 +24,32 @@
 			setTimeout(() => copySuccess = false, 1500);
 		});
 	}
+
+	function openFullscreen() {
+		if (!containerEl) return;
+		if (containerEl.requestFullscreen) {
+			containerEl.requestFullscreen();
+		} else if ((containerEl as any).webkitRequestFullscreen) {
+			(containerEl as any).webkitRequestFullscreen();
+		}
+	}
+
+	function handleFullscreenChange() {
+		isFullscreen = !!document.fullscreenElement;
+	}
 </script>
 
-<div class="gr-json-wrap">
+<svelte:document onfullscreenchange={handleFullscreenChange} />
+
+<div class="gr-json-wrap" class:fullscreen={isFullscreen} bind:this={containerEl}>
 	<div class="gr-header">
 		<span class="gr-label">{label}</span>
 		<div class="json-actions">
+			<button class="action-btn" onclick={openFullscreen} title="View fullscreen">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+				</svg>
+			</button>
 			{#if value !== null && value !== undefined}
 				<button class="action-btn" class:success={copySuccess} onclick={copyJson} title="Copy JSON">
 					{#if copySuccess}
@@ -115,6 +137,19 @@
 		border: 1px solid #333;
 		border-radius: 6px;
 		overflow: hidden;
+	}
+
+	.gr-json-wrap.fullscreen {
+		border-radius: 0;
+		display: flex;
+		flex-direction: column;
+		height: 100vh;
+	}
+
+	.gr-json-wrap.fullscreen .json-content {
+		flex: 1;
+		overflow: auto;
+		font-size: 14px;
 	}
 
 	.gr-header {

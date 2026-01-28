@@ -98,7 +98,21 @@
 			const blobUrl = URL.createObjectURL(blob);
 			const link = document.createElement('a');
 			link.href = blobUrl;
-			const ext = blob.type.split('/')[1]?.split(';')[0] || 'webm';
+			
+			let ext = 'wav';
+			try {
+				const urlPath = new URL(src, window.location.origin).pathname;
+				const urlExt = urlPath.split('.').pop()?.toLowerCase();
+				if (urlExt && ['wav', 'mp3', 'webm', 'ogg', 'flac', 'm4a', 'aac'].includes(urlExt)) {
+					ext = urlExt;
+				}
+			} catch {
+				const blobExt = blob.type.split('/')[1]?.split(';')[0];
+				if (blobExt && blobExt !== 'octet-stream') {
+					ext = blobExt;
+				}
+			}
+			
 			link.download = `${label || 'audio'}.${ext}`;
 			document.body.appendChild(link);
 			link.click();
@@ -122,7 +136,7 @@
 	<div class="gr-header">
 		<span class="gr-label">{label}</span>
 		<div class="audio-actions">
-			{#if editable && !isRecording}
+			{#if editable && !isRecording && !src}
 				<button class="action-btn" onclick={triggerUpload} title="Upload audio">
 					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 						<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>

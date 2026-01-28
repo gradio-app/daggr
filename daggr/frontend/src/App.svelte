@@ -273,7 +273,6 @@
 	}
 
 	function handleMessage(data: any) {
-		console.log('[daggr] received:', data.type, data);
 		if (data.type === 'graph') {
 			graphData = data.data;
 			
@@ -287,10 +286,23 @@
 						const node = data.data.nodes?.find((n: GraphNode) => n.name === nodeName);
 						if (node && node.output_components?.length > 0) {
 							nodeResults[nodeName] = results.map((result: any) => {
-								return node.output_components.map((comp: GradioComponentData) => ({
-									...comp,
-									value: result?.[comp.port_name] ?? comp.value
-								}));
+								return node.output_components.map((comp: GradioComponentData) => {
+									if (result === null || result === undefined) {
+										return { ...comp, value: comp.value };
+									}
+									if (typeof result !== 'object' || Array.isArray(result)) {
+										const expectedKeys = node.output_components.map((c: GradioComponentData) => c.port_name).join(', ');
+										nodeErrors[nodeName] = `Function must return a dict with keys: {${expectedKeys}}. Got ${Array.isArray(result) ? 'list' : typeof result} instead.`;
+										return { ...comp, value: comp.value };
+									}
+									if (!(comp.port_name in result)) {
+										const expectedKeys = node.output_components.map((c: GradioComponentData) => c.port_name).join(', ');
+										const gotKeys = Object.keys(result).join(', ');
+										nodeErrors[nodeName] = `Missing key "${comp.port_name}" in return value. Expected: {${expectedKeys}}, got: {${gotKeys}}`;
+										return { ...comp, value: comp.value };
+									}
+									return { ...comp, value: result[comp.port_name] };
+								});
 							});
 							selectedResultIndex[nodeName] = nodeResults[nodeName].length - 1;
 						}
@@ -393,10 +405,6 @@
 					}
 				}
 			}
-		} else if (data.type === 'sheet_set') {
-			console.log('[daggr] Sheet set to:', data.sheet_id);
-		} else if (data.type === 'input_saved') {
-			console.log('[daggr] Input saved for:', data.node_id);
 		}
 	}
 
@@ -861,7 +869,6 @@
 	}
 
 	function handleReplayItem(nodeName: string, itemIndex: number) {
-		console.log(`Replay item ${itemIndex} for node ${nodeName}`);
 	}
 
 	let zoomPercent = $derived(Math.round(transform.scale * 100));
@@ -1548,6 +1555,7 @@
 		border-radius: 10px;
 		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 		overflow: visible;
+		cursor: default;
 	}
 
 	.exec-time {

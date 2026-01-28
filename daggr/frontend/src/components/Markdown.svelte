@@ -11,6 +11,22 @@
 		showLabel = false
 	}: Props = $props();
 
+	let containerEl: HTMLDivElement | null = $state(null);
+	let isFullscreen = $state(false);
+
+	function openFullscreen() {
+		if (!containerEl) return;
+		if (containerEl.requestFullscreen) {
+			containerEl.requestFullscreen();
+		} else if ((containerEl as any).webkitRequestFullscreen) {
+			(containerEl as any).webkitRequestFullscreen();
+		}
+	}
+
+	function handleFullscreenChange() {
+		isFullscreen = !!document.fullscreenElement;
+	}
+
 	function parseMarkdown(text: string): string {
 		if (!text) return '';
 		
@@ -56,12 +72,23 @@
 	let renderedHtml = $derived(parseMarkdown(value));
 </script>
 
-<div class="gr-markdown-wrap">
-	{#if showLabel && label}
-		<div class="gr-header">
+<svelte:document onfullscreenchange={handleFullscreenChange} />
+
+<div class="gr-markdown-wrap" class:fullscreen={isFullscreen} bind:this={containerEl}>
+	<div class="gr-header">
+		{#if showLabel && label}
 			<span class="gr-label">{label}</span>
+		{:else}
+			<span></span>
+		{/if}
+		<div class="markdown-actions">
+			<button class="action-btn" onclick={openFullscreen} title="View fullscreen">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+				</svg>
+			</button>
 		</div>
-	{/if}
+	</div>
 	
 	<div class="markdown-content">
 		{@html renderedHtml}
@@ -76,7 +103,24 @@
 		overflow: hidden;
 	}
 
+	.gr-markdown-wrap.fullscreen {
+		border-radius: 0;
+		display: flex;
+		flex-direction: column;
+		height: 100vh;
+	}
+
+	.gr-markdown-wrap.fullscreen .markdown-content {
+		flex: 1;
+		overflow: auto;
+		font-size: 16px;
+		padding: 24px;
+	}
+
 	.gr-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
 		padding: 6px;
 	}
 
@@ -85,6 +129,39 @@
 		font-weight: 400;
 		color: #888;
 		padding-left: 4px;
+	}
+
+	.markdown-actions {
+		display: flex;
+		gap: 4px;
+	}
+
+	.action-btn {
+		width: 20px;
+		height: 20px;
+		padding: 3px;
+		border: none;
+		background: rgba(255, 255, 255, 0.08);
+		border-radius: 4px;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: background 0.15s;
+	}
+
+	.action-btn svg {
+		width: 12px;
+		height: 12px;
+		color: #888;
+	}
+
+	.action-btn:hover {
+		background: rgba(255, 255, 255, 0.15);
+	}
+
+	.action-btn:hover svg {
+		color: #fff;
 	}
 
 	.markdown-content {

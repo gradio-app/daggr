@@ -77,6 +77,11 @@ def main():
         action="store_true",
         help="Don't watch daggr source for changes",
     )
+    parser.add_argument(
+        "--reset-cache",
+        action="store_true",
+        help="Delete all cached data (sheets, results, downloaded files) for this project and exit",
+    )
 
     args = parser.parse_args()
 
@@ -89,6 +94,10 @@ def main():
         print(f"Error: Script must be a Python file: {script_path}")
         sys.exit(1)
 
+    if args.reset_cache:
+        _reset_cache(script_path)
+        sys.exit(0)
+
     watch_daggr = args.watch_daggr and not args.no_watch_daggr
 
     os.environ["DAGGR_SCRIPT_PATH"] = str(script_path)
@@ -100,6 +109,100 @@ def main():
     else:
         os.environ["DAGGR_HOT_RELOAD"] = "1"
         _run_with_reload(script_path, args.host, args.port, watch_daggr)
+
+
+def _reset_cache(script_path: Path):
+    """Delete all cached data for the project defined in the script."""
+    import sqlite3
+
+    from daggr.graph import Graph
+    from daggr.state import get_daggr_cache_dir
+
+    sys.path.insert(0, str(script_path.parent))
+
+    original_launch = Graph.launch
+    captured_graph = None
+
+    def capture_launch(self, **kwargs):
+        nonlocal captured_graph
+        captured_graph = self
+
+    Graph.launch = capture_launch
+
+    try:
+        spec = importlib.util.spec_from_file_location("__daggr_reset__", script_path)
+        if spec is None or spec.loader is None:
+            print(f"Error: Could not load script: {script_path}")
+            sys.exit(1)
+
+        module = importlib.util.module_from_spec(spec)
+        sys.modules["__daggr_reset__"] = module
+        spec.loader.exec_module(module)
+    finally:
+        Graph.launch = original_launch
+
+    if captured_graph is None:
+        for name in dir(module):
+            obj = getattr(module, name)
+            if isinstance(obj, Graph):
+                captured_graph = obj
+                break
+
+    if captured_graph is None:
+        print(f"Error: No Graph found in {script_path}")
+        sys.exit(1)
+
+    persist_key = captured_graph.persist_key
+    if not persist_key:
+        print(f"Error: Graph has no persist_key (persistence is disabled)")
+        sys.exit(1)
+
+    cache_dir = get_daggr_cache_dir()
+    db_path = cache_dir / "sessions.db"
+
+    if not db_path.exists():
+        print(f"No cache found for project '{persist_key}'")
+        return
+
+    conn = sqlite3.connect(str(db_path))
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT sheet_id FROM sheets WHERE graph_name = ?",
+        (persist_key,),
+    )
+    sheet_ids = [row[0] for row in cursor.fetchall()]
+
+    if not sheet_ids:
+        print(f"No cached data found for project '{persist_key}'")
+        conn.close()
+        return
+
+    print(f"\nProject: {persist_key}")
+    print(f"This will delete {len(sheet_ids)} sheet(s) and all associated data.")
+    print(f"Cache location: {cache_dir}\n")
+
+    try:
+        response = input("Are you sure you want to continue? [y/N] ").strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        print("\nAborted.")
+        conn.close()
+        return
+
+    if response not in ("y", "yes"):
+        print("Aborted.")
+        conn.close()
+        return
+
+    for sheet_id in sheet_ids:
+        cursor.execute("DELETE FROM node_inputs WHERE sheet_id = ?", (sheet_id,))
+        cursor.execute("DELETE FROM node_results WHERE sheet_id = ?", (sheet_id,))
+        cursor.execute("DELETE FROM sheets WHERE sheet_id = ?", (sheet_id,))
+
+    conn.commit()
+    conn.close()
+
+    print(f"\n✓ Deleted {len(sheet_ids)} sheet(s) for project '{persist_key}'")
 
 
 def _run_script(script_path: Path, host: str, port: int):

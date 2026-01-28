@@ -24,6 +24,21 @@
 
 	let editingCell: { row: number; col: number } | null = $state(null);
 	let editValue = $state('');
+	let containerEl: HTMLDivElement | null = $state(null);
+	let isFullscreen = $state(false);
+
+	function openFullscreen() {
+		if (!containerEl) return;
+		if (containerEl.requestFullscreen) {
+			containerEl.requestFullscreen();
+		} else if ((containerEl as any).webkitRequestFullscreen) {
+			(containerEl as any).webkitRequestFullscreen();
+		}
+	}
+
+	function handleFullscreenChange() {
+		isFullscreen = !!document.fullscreenElement;
+	}
 
 	function startEdit(row: number, col: number, currentValue: any) {
 		if (!editable) return;
@@ -63,10 +78,17 @@
 	}
 </script>
 
-<div class="gr-dataframe-wrap">
+<svelte:document onfullscreenchange={handleFullscreenChange} />
+
+<div class="gr-dataframe-wrap" class:fullscreen={isFullscreen} bind:this={containerEl}>
 	<div class="gr-header">
 		<span class="gr-label">{label}</span>
 		<div class="table-actions">
+			<button class="action-btn" onclick={openFullscreen} title="View fullscreen">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+				</svg>
+			</button>
 			{#if value}
 				<button class="action-btn" onclick={copyTable} title="Copy to clipboard">
 					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -130,6 +152,31 @@
 		border: 1px solid #333;
 		border-radius: 6px;
 		overflow: hidden;
+	}
+
+	.gr-dataframe-wrap.fullscreen {
+		border-radius: 0;
+		display: flex;
+		flex-direction: column;
+		height: 100vh;
+	}
+
+	.gr-dataframe-wrap.fullscreen .table-container {
+		flex: 1;
+		max-height: none !important;
+	}
+
+	.gr-dataframe-wrap.fullscreen table {
+		font-size: 14px;
+	}
+
+	.gr-dataframe-wrap.fullscreen th,
+	.gr-dataframe-wrap.fullscreen td {
+		padding: 8px 12px;
+	}
+
+	.gr-dataframe-wrap.fullscreen .cell-content {
+		max-width: none;
 	}
 
 	.gr-header {

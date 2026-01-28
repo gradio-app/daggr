@@ -38,7 +38,13 @@ class SequentialExecutor:
         if client is None:
             from gradio_client import Client
 
-            client = Client(gradio_node._src, download_files=False, verbose=False)
+            from daggr.state import get_daggr_files_dir
+
+            client = Client(
+                gradio_node._src,
+                download_files=get_daggr_files_dir(),
+                verbose=False,
+            )
             _client_cache.set_client(gradio_node._src, client)
 
         self.clients[cache_key] = client
@@ -243,7 +249,9 @@ class SequentialExecutor:
             client = InferenceClient(model=variant._model)
             input_value = all_inputs.get(
                 "input",
-                all_inputs.get(variant._input_ports[0]) if variant._input_ports else None,
+                all_inputs.get(variant._input_ports[0])
+                if variant._input_ports
+                else None,
             )
             result = client.text_generation(input_value) if input_value else None
 

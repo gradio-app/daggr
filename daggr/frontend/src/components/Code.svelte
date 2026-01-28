@@ -18,8 +18,23 @@
 	}: Props = $props();
 
 	let copySuccess = $state(false);
+	let containerEl: HTMLDivElement | null = $state(null);
+	let isFullscreen = $state(false);
 
 	let lines = $derived(value ? value.split('\n') : ['']);
+
+	function openFullscreen() {
+		if (!containerEl) return;
+		if (containerEl.requestFullscreen) {
+			containerEl.requestFullscreen();
+		} else if ((containerEl as any).webkitRequestFullscreen) {
+			(containerEl as any).webkitRequestFullscreen();
+		}
+	}
+
+	function handleFullscreenChange() {
+		isFullscreen = !!document.fullscreenElement;
+	}
 
 	function copyCode() {
 		navigator.clipboard.writeText(value).then(() => {
@@ -46,13 +61,20 @@
 	}
 </script>
 
-<div class="gr-code-wrap">
+<svelte:document onfullscreenchange={handleFullscreenChange} />
+
+<div class="gr-code-wrap" class:fullscreen={isFullscreen} bind:this={containerEl}>
 	<div class="gr-header">
 		<div class="header-left">
 			<span class="gr-label">{label}</span>
 			<span class="language-badge">{language}</span>
 		</div>
 		<div class="code-actions">
+			<button class="action-btn" onclick={openFullscreen} title="View fullscreen">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+				</svg>
+			</button>
 			<button class="action-btn" class:success={copySuccess} onclick={copyCode} title="Copy code">
 				{#if copySuccess}
 					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -104,6 +126,13 @@
 		border: 1px solid #333;
 		border-radius: 6px;
 		overflow: hidden;
+	}
+
+	.gr-code-wrap.fullscreen {
+		border-radius: 0;
+		display: flex;
+		flex-direction: column;
+		height: 100vh;
 	}
 
 	.gr-header {
@@ -176,6 +205,20 @@
 	.code-container {
 		max-height: 300px;
 		overflow: auto;
+	}
+
+	.gr-code-wrap.fullscreen .code-container {
+		max-height: none;
+		flex: 1;
+	}
+
+	.gr-code-wrap.fullscreen .code-content,
+	.gr-code-wrap.fullscreen .code-editor {
+		font-size: 14px;
+	}
+
+	.gr-code-wrap.fullscreen .line-numbers span {
+		font-size: 14px;
 	}
 
 	.code-display {

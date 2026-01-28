@@ -26,7 +26,14 @@ __version__ = json.loads((Path(__file__).parent / "package.json").read_text())[
 
 from daggr.edge import Edge
 from daggr.graph import Graph
-from daggr.node import ChoiceNode, FnNode, GradioNode, InferenceNode, InteractionNode, Node
+from daggr.node import (
+    ChoiceNode,
+    FnNode,
+    GradioNode,
+    InferenceNode,
+    InteractionNode,
+    Node,
+)
 from daggr.port import ItemList, Port
 from daggr.server import DaggrServer
 

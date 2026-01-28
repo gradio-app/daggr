@@ -223,7 +223,9 @@ class Graph:
 
         self._prepare_local_nodes()
         server = DaggrServer(self)
-        server.run(host=host, port=port, share=share, open_browser=open_browser, **kwargs)
+        server.run(
+            host=host, port=port, share=share, open_browser=open_browser, **kwargs
+        )
 
     def _prepare_local_nodes(self) -> None:
         from daggr.local_space import prepare_local_node

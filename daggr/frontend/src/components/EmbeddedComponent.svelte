@@ -2,6 +2,21 @@
 	import Audio from './Audio.svelte';
 	import Textbox from './Textbox.svelte';
 	import Image from './Image.svelte';
+	import Dialogue from './Dialogue.svelte';
+	import Video from './Video.svelte';
+	import File from './File.svelte';
+	import Dataframe from './Dataframe.svelte';
+	import Gallery from './Gallery.svelte';
+	import Code from './Code.svelte';
+	import Json from './Json.svelte';
+	import Slider from './Slider.svelte';
+	import Radio from './Radio.svelte';
+	import Dropdown from './Dropdown.svelte';
+	import CheckboxGroup from './CheckboxGroup.svelte';
+	import ColorPicker from './ColorPicker.svelte';
+	import Label from './Label.svelte';
+	import HighlightedText from './HighlightedText.svelte';
+	import Markdown from './Markdown.svelte';
 	import type { GradioComponentData } from '../types';
 
 	interface Props {
@@ -57,20 +72,22 @@
 			<span class="gr-check-label">{comp.props?.label || comp.port_name}</span>
 		</label>
 	{:else if comp.component === 'markdown'}
-		<div class="gr-textbox-wrap">
-			<span class="gr-label">{comp.props?.label || comp.port_name}</span>
-			<div class="gr-markdown">{@html comp.value || ''}</div>
-		</div>
+		<Markdown
+			label={comp.props?.label || comp.port_name}
+			value={value || ''}
+			showLabel={true}
+		/>
 	{:else if comp.component === 'html'}
 		<div class="gr-textbox-wrap">
 			<span class="gr-label">{comp.props?.label || comp.port_name}</span>
 			<div class="gr-html">{@html comp.value || ''}</div>
 		</div>
 	{:else if comp.component === 'json'}
-		<div class="gr-textbox-wrap">
-			<span class="gr-label">{comp.props?.label || comp.port_name}</span>
-			<pre class="gr-json">{typeof comp.value === 'string' ? comp.value : JSON.stringify(comp.value, null, 2)}</pre>
-		</div>
+		<Json
+			label={comp.props?.label || comp.port_name}
+			value={value}
+			open={comp.props?.open ?? 2}
+		/>
 	{:else if comp.component === 'audio'}
 		<Audio
 			label={comp.props?.label || comp.port_name}
@@ -82,7 +99,102 @@
 		<Image
 			label={comp.props?.label || comp.port_name}
 			value={value}
+			editable={isInputNode}
 			onchange={(v) => onchange?.(comp.port_name, v)}
+		/>
+	{:else if comp.component === 'video'}
+		<Video
+			label={comp.props?.label || comp.port_name}
+			value={value}
+			editable={isInputNode}
+			onchange={(v) => onchange?.(comp.port_name, v)}
+		/>
+	{:else if comp.component === 'file'}
+		<File
+			label={comp.props?.label || comp.port_name}
+			value={value}
+			editable={isInputNode}
+			fileTypes={comp.props?.file_types}
+			onchange={(v) => onchange?.(comp.port_name, v)}
+		/>
+	{:else if comp.component === 'dataframe'}
+		<Dataframe
+			label={comp.props?.label || comp.port_name}
+			value={value}
+			editable={isInputNode}
+			onchange={(v) => onchange?.(comp.port_name, v)}
+		/>
+	{:else if comp.component === 'gallery'}
+		<Gallery
+			label={comp.props?.label || comp.port_name}
+			value={value}
+		/>
+	{:else if comp.component === 'dialogue'}
+		<Dialogue
+			label={comp.props?.label || comp.port_name}
+			value={Array.isArray(value) ? value : (value ? [value] : [])}
+			speakers={comp.props?.speakers || []}
+			editable={true}
+			onchange={(v) => onchange?.(comp.port_name, v)}
+		/>
+	{:else if comp.component === 'code'}
+		<Code
+			label={comp.props?.label || comp.port_name}
+			value={value || ''}
+			language={comp.props?.language || 'text'}
+			editable={isInputNode}
+			onchange={(v) => onchange?.(comp.port_name, v)}
+		/>
+	{:else if comp.component === 'slider'}
+		<Slider
+			label={comp.props?.label || comp.port_name}
+			value={value ?? comp.props?.value ?? 0}
+			min={comp.props?.minimum ?? 0}
+			max={comp.props?.maximum ?? 100}
+			step={comp.props?.step ?? 1}
+			disabled={!isInputNode}
+			onchange={(v) => onchange?.(comp.port_name, v)}
+		/>
+	{:else if comp.component === 'radio'}
+		<Radio
+			label={comp.props?.label || comp.port_name}
+			choices={comp.props?.choices || []}
+			value={value}
+			disabled={!isInputNode}
+			onchange={(v) => onchange?.(comp.port_name, v)}
+		/>
+	{:else if comp.component === 'dropdown'}
+		<Dropdown
+			label={comp.props?.label || comp.port_name}
+			choices={comp.props?.choices || []}
+			value={value}
+			disabled={!isInputNode}
+			onchange={(v) => onchange?.(comp.port_name, v)}
+		/>
+	{:else if comp.component === 'checkboxgroup'}
+		<CheckboxGroup
+			label={comp.props?.label || comp.port_name}
+			choices={comp.props?.choices || []}
+			value={value || []}
+			disabled={!isInputNode}
+			onchange={(v) => onchange?.(comp.port_name, v)}
+		/>
+	{:else if comp.component === 'colorpicker'}
+		<ColorPicker
+			label={comp.props?.label || comp.port_name}
+			value={value || '#000000'}
+			disabled={!isInputNode}
+			onchange={(v) => onchange?.(comp.port_name, v)}
+		/>
+	{:else if comp.component === 'label'}
+		<Label
+			label={comp.props?.label || comp.port_name}
+			value={value}
+		/>
+	{:else if comp.component === 'highlightedtext'}
+		<HighlightedText
+			label={comp.props?.label || comp.port_name}
+			value={value}
 		/>
 	{:else}
 		<div class="gr-fallback">

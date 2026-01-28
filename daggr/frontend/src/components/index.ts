@@ -15,6 +15,7 @@ export { default as Button } from './Button.svelte';
 export { default as Video } from './Video.svelte';
 export { default as File } from './File.svelte';
 export { default as Dataframe } from './Dataframe.svelte';
+export { default as Dialogue } from './Dialogue.svelte';
 export { default as Gallery } from './Gallery.svelte';
 export { default as Json } from './Json.svelte';
 export { default as ColorPicker } from './ColorPicker.svelte';
