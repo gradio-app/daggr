@@ -1,3 +1,4 @@
+# Showcases parallel image generation, video transitions between scenes, and ffmpeg concatenation into a slideshow.
 import subprocess
 import tempfile
 

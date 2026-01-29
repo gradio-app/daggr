@@ -1,3 +1,4 @@
+# Showcases running a GradioNode locally with run_locally=True instead of calling a remote Space.
 import gradio as gr
 
 from daggr import GradioNode, Graph

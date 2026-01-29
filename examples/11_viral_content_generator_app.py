@@ -1,29 +1,9 @@
-"""
-📱 Viral Content Generator - Daggr Demo
-========================================
-Generate a complete social media content package in one click!
-
-Creates in parallel:
-- Eye-catching image for the post
-- Engaging caption with hashtags
-- Short video/animation for Reels/TikTok
-- Alternative image for A/B testing
-
-This demonstrates Daggr's parallel execution and visual debugging.
-Perfect for content creators and marketers.
-
-Run with: daggr daggr_viral_content_demo.py
-"""
-
+# Showcases a social media content pipeline: idea expansion → parallel image/video generation → content packaging.
 import random
 
 import gradio as gr
 
-from daggr import FnNode, GradioNode, Graph, InferenceNode
-
-# ============================================================================
-# STEP 1: Expand Idea into Content Strategy
-# ============================================================================
+from daggr import FnNode, GradioNode, Graph
 
 
 def expand_content_idea(
@@ -36,7 +16,6 @@ def expand_content_idea(
     In production, use an LLM for more creative output.
     """
 
-    # Platform-specific adjustments
     platform_styles = {
         "Instagram": {
             "aspect": "square, centered composition",
@@ -62,17 +41,14 @@ def expand_content_idea(
 
     style = platform_styles.get(platform, platform_styles["Instagram"])
 
-    # Generate image prompts
     base_prompt = f"{style['tone_prefix']}, {topic}, {tone} mood, {style['aspect']}, high quality, trending"
     image_prompt = f"{base_prompt}, vibrant colors, professional photography style"
     alt_image_prompt = f"{base_prompt}, minimalist design, artistic interpretation"
 
-    # Video prompt
     video_prompt = (
         f"{topic}, {style['video_style']}, {tone} atmosphere, cinematic, 4k quality"
     )
 
-    # Generate caption
     tone_emojis = {
         "Professional": "📊",
         "Fun & Playful": "🎉",
@@ -82,13 +58,11 @@ def expand_content_idea(
     }
     emoji = tone_emojis.get(tone, "✨")
 
-    # Caption structure
     hook = f"{emoji} {topic.capitalize()}"
     body = f"Here's something that changed my perspective on {topic}..."
     cta = "\n\n👇 Drop your thoughts below!" if include_cta else ""
     caption = f"{hook}\n\n{body}{cta}"
 
-    # Generate relevant hashtags
     topic_words = topic.lower().replace(",", "").split()
     base_hashtags = [f"#{word}" for word in topic_words[:3] if len(word) > 3]
     platform_hashtags = {
@@ -139,31 +113,19 @@ content_strategy = FnNode(
     },
 )
 
-
-# ============================================================================
-# STEP 2A: Generate Primary Image
-# ============================================================================
-
 primary_image = GradioNode(
     space_or_url="hf-applications/Z-Image-Turbo",
     api_name="/generate_image",
     inputs={
         "prompt": content_strategy.image_prompt,
         "seed": random.randint(0, 999999),
-        # "randomize_seed": True,
         "width": 1024,
         "height": 1024,
-        # "num_inference_steps": 4,
     },
     outputs={
         "image": gr.Image(label="🖼️ Primary Image"),
     },
 )
-
-
-# ============================================================================
-# STEP 2B: Generate Alternative Image (Parallel with 2A)
-# ============================================================================
 
 alt_image = GradioNode(
     space_or_url="hf-applications/Z-Image-Turbo",
@@ -179,29 +141,19 @@ alt_image = GradioNode(
     },
 )
 
-
-# ============================================================================
-# STEP 2C: Generate Video from Primary Image
-# ============================================================================
-
 content_video = GradioNode(
     space_or_url="Lightricks/ltx-2-distilled",
     api_name="/generate_video",
     inputs={
         "input_image": primary_image.image,
         "prompt": content_strategy.video_prompt,
-        "duration": 3,  # ~2-3 seconds
+        "duration": 3,
     },
     outputs={
         "video": gr.Video(label="🎬 Animated Content"),
         "seed": None,
     },
 )
-
-
-# ============================================================================
-# STEP 3: Package Everything Together
-# ============================================================================
 
 
 def package_content(
@@ -217,7 +169,6 @@ def package_content(
     """
     import json
 
-    # Create content package JSON
     package = {
         "platform": platform,
         "primary_image": primary_img,
@@ -228,7 +179,6 @@ def package_content(
         "ready_to_post": all([primary_img, caption]),
     }
 
-    # Generate visual preview HTML
     preview_html = f"""
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 500px; margin: 0 auto;">
         
@@ -308,18 +258,13 @@ final_package = FnNode(
         "video": content_video.video,
         "caption": content_strategy.caption,
         "hashtags": content_strategy.hashtags,
-        "platform": content_strategy.image_prompt,  # Pass through for context
+        "platform": content_strategy.image_prompt,
     },
     outputs={
         "package_json": gr.Code(label="📦 Content Package (JSON)", language="json"),
         "preview": gr.HTML(label="📱 Post Preview"),
     },
 )
-
-
-# ============================================================================
-# CREATE THE GRAPH
-# ============================================================================
 
 graph = Graph(
     name="📱 Viral Content Generator",
@@ -331,11 +276,6 @@ graph = Graph(
         final_package,
     ],
 )
-
-
-# ============================================================================
-# LAUNCH
-# ============================================================================
 
 if __name__ == "__main__":
     graph.launch()

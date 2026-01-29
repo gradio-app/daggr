@@ -1,3 +1,4 @@
+# Showcases scatter/gather with ItemList: generate dialogue items and process each with TTS, then combine.
 import ssl
 import tempfile
 import time

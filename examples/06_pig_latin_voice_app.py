@@ -1,3 +1,4 @@
+# Showcases InferenceNode for speech-to-text and text-to-speech with an FnNode transformation in between.
 import gradio as gr
 
 from daggr import FnNode, Graph, InferenceNode

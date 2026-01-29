@@ -1,26 +1,7 @@
-"""
-🎙️ Document to Podcast Generator - Daggr Demo
-==============================================
-Transform any document or article into an engaging podcast conversation!
-
-This workflow:
-1. Extracts and summarizes content from a URL or document
-2. Generates a natural dialogue script between two hosts
-3. Creates voice audio for each speaker (scatter)
-4. Combines all audio into a final podcast episode
-
-Perfect for: content repurposing, accessibility, learning on the go.
-
-Run with: daggr daggr_podcast_demo.py
-"""
-
+# Showcases a full document-to-podcast pipeline: URL extraction → dialogue generation → TTS → audio combining.
 import gradio as gr
 
-from daggr import FnNode, GradioNode, Graph
-
-# ============================================================================
-# STEP 1: Extract Content from URL
-# ============================================================================
+from daggr import FnNode, Graph
 
 
 def extract_content(url: str, custom_text: str) -> tuple[str, str]:
@@ -34,7 +15,6 @@ def extract_content(url: str, custom_text: str) -> tuple[str, str]:
     from bs4 import BeautifulSoup
 
     if custom_text.strip():
-        # Use custom text if provided
         lines = custom_text.strip().split("\n")
         title = lines[0][:50] if lines else "Custom Content"
         return custom_text, title
@@ -43,31 +23,24 @@ def extract_content(url: str, custom_text: str) -> tuple[str, str]:
         return "Please provide a URL or paste your content.", "No Content"
 
     try:
-        # Fetch the page
         headers = {"User-Agent": "Mozilla/5.0"}
         response = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(response.text, "html.parser")
 
-        # Extract title
         title = soup.find("title")
         title = title.text.strip() if title else "Untitled"
 
-        # Remove script and style elements
         for element in soup(["script", "style", "nav", "footer", "header"]):
             element.decompose()
 
-        # Get main content (try article first, then body)
         article = soup.find("article") or soup.find("main") or soup.body
 
         if article:
-            # Get text and clean it
             text = article.get_text(separator="\n")
-            # Clean up whitespace
             text = re.sub(r"\n\s*\n", "\n\n", text)
             text = re.sub(r" +", " ", text)
             text = text.strip()
 
-            # Limit to reasonable length
             if len(text) > 10000:
                 text = text[:10000] + "..."
 
@@ -100,11 +73,6 @@ content_extractor = FnNode(
 )
 
 
-# ============================================================================
-# STEP 2: Generate Podcast Dialogue Script
-# ============================================================================
-
-
 def generate_dialogue(
     content: str, title: str, host_style: str, episode_length: str
 ) -> tuple[list, str]:
@@ -114,18 +82,14 @@ def generate_dialogue(
 
     In production, this would use an LLM. Demo shows expected structure.
     """
-    # Determine number of exchanges based on length
     exchanges = {
         "Short (2-3 min)": 6,
         "Medium (5-7 min)": 12,
         "Long (10+ min)": 20,
     }.get(episode_length, 8)
 
-    # Generate dialogue structure
-    # In production, this would be LLM-generated based on content
     dialogue = []
 
-    # Opening
     dialogue.append(
         {
             "speaker": "host",
@@ -137,19 +101,15 @@ def generate_dialogue(
     dialogue.append(
         {
             "speaker": "guest",
-            "text": f"Me too! When I first read through this, I was struck by how relevant it is. There's a lot to unpack here.",
+            "text": "Me too! When I first read through this, I was struck by how relevant it is. There's a lot to unpack here.",
             "voice_style": "friendly, curious",
         }
     )
 
-    # Content discussion (simplified for demo)
-    # In production, LLM would generate based on actual content
-    content_preview = content[:500] if len(content) > 500 else content
-
     dialogue.append(
         {
             "speaker": "host",
-            "text": f"So let's start with the main point. Can you give our listeners the key takeaway?",
+            "text": "So let's start with the main point. Can you give our listeners the key takeaway?",
             "voice_style": host_style,
         }
     )
@@ -157,12 +117,11 @@ def generate_dialogue(
     dialogue.append(
         {
             "speaker": "guest",
-            "text": f"Absolutely. The core idea here is really about understanding the bigger picture. The author makes a compelling case that we need to think differently about this topic.",
+            "text": "Absolutely. The core idea here is really about understanding the bigger picture. The author makes a compelling case that we need to think differently about this topic.",
             "voice_style": "thoughtful, explaining",
         }
     )
 
-    # Add more exchanges based on length
     for i in range((exchanges - 4) // 2):
         dialogue.append(
             {
@@ -174,12 +133,11 @@ def generate_dialogue(
         dialogue.append(
             {
                 "speaker": "guest",
-                "text": f"Well, I think the author's argument about context is particularly strong. It challenges conventional thinking in a productive way.",
+                "text": "Well, I think the author's argument about context is particularly strong. It challenges conventional thinking in a productive way.",
                 "voice_style": "engaged, analytical",
             }
         )
 
-    # Closing
     dialogue.append(
         {
             "speaker": "host",
@@ -204,14 +162,13 @@ def generate_dialogue(
         }
     )
 
-    # Generate HTML preview
     html = f"""
     <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #ffffff; border-radius: 12px;">
         <h2 style="border-bottom: 2px solid #333; padding-bottom: 10px; color: #1a1a1a;">🎙️ {title}</h2>
         <p style="color: #1a1a1a; font-style: italic;">Episode Preview • {len(dialogue)} segments</p>
     """
 
-    for line in dialogue[:6]:  # Show first 6 lines
+    for line in dialogue[:6]:
         speaker_color = "#2563eb" if line["speaker"] == "host" else "#059669"
         speaker_label = "🎤 Host" if line["speaker"] == "host" else "🗣️ Guest"
         html += f"""
@@ -257,11 +214,6 @@ dialogue_generator = FnNode(
 )
 
 
-# ============================================================================
-# STEP 3: Generate Voice Audio (Process all in one FnNode - bypasses scatter bug)
-# ============================================================================
-
-
 def generate_all_voice_segments(dialogue: list) -> list:
     """
     Generate TTS audio for ALL dialogue lines in a single node.
@@ -281,7 +233,6 @@ def generate_all_voice_segments(dialogue: list) -> list:
                 voice_description=item.get("voice_style", "friendly"),
                 api_name="/generate_voice_design",
             )
-            # result is (audio_filepath, status) - we want the audio
             audio_path = result[0] if isinstance(result, tuple) else result
             audio_files.append(audio_path)
             print(f"  ✓ Generated: {audio_path}")
@@ -295,7 +246,7 @@ def generate_all_voice_segments(dialogue: list) -> list:
 voice_generator = FnNode(
     fn=generate_all_voice_segments,
     inputs={
-        "dialogue": dialogue_generator.dialogue,  # Pass the full list, NOT .each
+        "dialogue": dialogue_generator.dialogue,
     },
     outputs={
         "audio_files": gr.JSON(label="🔊 Generated Audio Files", visible=False),
@@ -303,13 +254,8 @@ voice_generator = FnNode(
 )
 
 
-# ============================================================================
-# STEP 4: Combine Audio into Final Podcast
-# ============================================================================
-
-
 def combine_podcast(
-    audio_files: list,  # Now receives list directly, not from .all()
+    audio_files: list,
     dialogue: list,
     title: str,
 ) -> tuple[str, str]:
@@ -369,7 +315,7 @@ def combine_podcast(
 final_podcast = FnNode(
     fn=combine_podcast,
     inputs={
-        "audio_files": voice_generator.audio_files,  # Direct reference, no .all()
+        "audio_files": voice_generator.audio_files,
         "dialogue": dialogue_generator.dialogue,
         "title": content_extractor.title,
     },
@@ -378,10 +324,6 @@ final_podcast = FnNode(
         "summary": gr.HTML(label="📊 Episode Summary"),
     },
 )
-
-# ============================================================================
-# CREATE THE GRAPH
-# ============================================================================
 
 graph = Graph(
     name="🎙️ Document to Podcast Generator",
@@ -392,11 +334,6 @@ graph = Graph(
         final_podcast,
     ],
 )
-
-
-# ============================================================================
-# LAUNCH
-# ============================================================================
 
 if __name__ == "__main__":
     graph.launch()

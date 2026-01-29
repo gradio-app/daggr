@@ -1,3 +1,4 @@
+# Showcases parallel execution by comparing two TTS services (Qwen and Maya) with the same input.
 import gradio as gr
 
 from daggr import GradioNode, Graph

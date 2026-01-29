@@ -1,3 +1,4 @@
+# Showcases basic GradioNode chaining: generate an image then remove its background.
 import random
 
 import gradio as gr

@@ -1,3 +1,4 @@
+# Showcases a multi-step image-to-3D pipeline: background removal → downscaling → FLUX enhancement → TRELLIS 3D.
 import uuid
 from typing import Any
 

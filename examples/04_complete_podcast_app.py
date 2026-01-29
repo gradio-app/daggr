@@ -1,3 +1,4 @@
+# Showcases a complete podcast generator using real TTS (Qwen3-TTS) with scatter/gather for multi-speaker audio.
 import ssl
 import tempfile
 import time

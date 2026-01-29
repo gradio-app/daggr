@@ -1,3 +1,4 @@
+# Showcases a text-to-3D pipeline: FLUX image generation → background removal → TRELLIS mesh extraction.
 import gradio as gr
 
 from daggr import GradioNode, Graph
