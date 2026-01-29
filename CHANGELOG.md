@@ -1,5 +1,11 @@
 # daggr
 
+## 0.5.0
+
+### Features
+
+- [#8](https://github.com/gradio-app/daggr/pull/8) [`e480065`](https://github.com/gradio-app/daggr/commit/e480065dd058dbf19053a80956dbfc90cf3e3caf) - Improving security around executor and various bug fixes.  Thanks @abidlabs!
+
 ## 0.4.0
 
 ### Features
