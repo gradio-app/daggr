@@ -1,8 +1,4 @@
-"""Session management for daggr.
-
-This module provides per-session execution contexts for security isolation
-and concurrency management.
-"""
+"""Session management for daggr, including per-session execution contexts for security isolation and concurrency management."""
 
 from __future__ import annotations
 

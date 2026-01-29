@@ -12,7 +12,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.115.0",
-    "gradio>=6.0.0,<6.5.0",
+    "gradio>=6.0.0",
     "networkx>=3.0",
     "uvicorn[standard]>=0.34.0",
 ]
