@@ -46,7 +46,9 @@ img = GradioNode("Tongyi-MAI/Z-Image-Turbo", api_name="/generate",
     outputs={"image": gr.Image()})
 ```
 
-Find Spaces (semantic search): `https://huggingface.co/api/spaces/semantic-search?q=generate+music+for+a+video&sdk=gradio`
+Find Spaces: `https://huggingface.co/api/spaces/semantic-search?q=generate+music+for+a+video&sdk=gradio`
+Or by category: `https://huggingface.co/api/spaces/semantic-search?category=image-generation&sdk=gradio`
+(categories: image-generation | video-generation | text-generation | speech-synthesis | music-generation | voice-cloning | image-editing | background-removal | image-upscaling | ocr | style-transfer | image-captioning)
 
 ### FnNode - Python Functions
 
