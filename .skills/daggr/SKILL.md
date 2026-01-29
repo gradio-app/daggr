@@ -56,6 +56,8 @@ node = FnNode(
 
 ### InferenceNode - [HF Inference Providers](https://huggingface.co/docs/inference-providers)
 
+Models: https://router.huggingface.co/v1/models
+
 ```python
 node = InferenceNode(
     model="org/model:provider",  # model:provider (fal-ai, replicate, together, etc.)
