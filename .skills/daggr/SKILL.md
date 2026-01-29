@@ -32,7 +32,11 @@ img = GradioNode("Tongyi-MAI/Z-Image-Turbo", api_name="/generate",
     inputs={"prompt": gr.Textbox(), "resolution": "1024x1024 ( 1:1 )"},
     postprocess=lambda imgs, *_: imgs[0]["image"],
     outputs={"image": gr.Image()})
+```
 
+Find models: `https://huggingface.co/api/models?inference_provider=all&pipeline_tag=text-to-image` (swap pipeline_tag)
+
+```python
 # General pattern
 node = GradioNode(
     space_or_url="owner/space-name",
@@ -62,9 +66,7 @@ node = FnNode(
 
 ### InferenceNode - [HF Inference Providers](https://huggingface.co/docs/inference-providers)
 
-Find models: `https://huggingface.co/api/models?inference_provider=all&pipeline_tag=text-to-image` (swap pipeline_tag)
-
-VLM/LLM only: https://router.huggingface.co/v1/models
+VLM/LLM models: https://router.huggingface.co/v1/models
 
 ```python
 node = InferenceNode(
@@ -153,7 +155,7 @@ def combine(video: str|dict, audio: str|dict) -> str:
 ## Run
 
 ```bash
-pip install daggr
+uv pip install daggr
 python workflow.py  # Starts web server at http://127.0.0.1:7860
 ```
 
