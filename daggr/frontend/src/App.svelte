@@ -383,10 +383,26 @@
 
 	function handleMessage(data: any) {
 		if (data.type === 'graph') {
-			graphData = data.data;
+			const newUserId = data.data.user_id;
+			const newSheetId = data.data.sheet_id;
+			const userOrSheetChanged = newUserId !== userId || newSheetId !== currentSheetId;
 			
-			if (data.data.sheet_id) {
-				currentSheetId = data.data.sheet_id;
+			if (userOrSheetChanged) {
+				nodeResults = {};
+				nodeInputsSnapshots = {};
+				selectedResultIndex = {};
+				nodeErrors = {};
+				inputValues = {};
+				itemListValues = {};
+				selectedVariants = {};
+				nodeExecutionTimes = {};
+			}
+			
+			graphData = data.data;
+			userId = newUserId;
+			
+			if (newSheetId) {
+				currentSheetId = newSheetId;
 			}
 			
 			if (data.data.nodes) {

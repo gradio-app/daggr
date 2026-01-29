@@ -302,6 +302,7 @@ class DaggrServer:
 
                     if "hf_token" in data:
                         browser_hf_token = data.get("hf_token")
+                        old_user_id = user_id
                         if browser_hf_token:
                             hf_user = self._validate_hf_token(browser_hf_token)
                             user_id = self.state.get_effective_user_id(hf_user)
@@ -310,6 +311,9 @@ class DaggrServer:
                             hf_user = self._get_hf_user_info()
                             user_id = self.state.get_effective_user_id(hf_user)
                             session.set_hf_token(None)
+                        if old_user_id != user_id:
+                            session.clear_results()
+                            current_sheet_id = None
 
                     if action == "run":
                         node_name = data.get("node_name")
@@ -478,7 +482,10 @@ class DaggrServer:
 
             from daggr.state import get_daggr_cache_dir
 
-            file_path = Path("/") / path
+            if len(path) >= 2 and path[1] == ":":
+                file_path = Path(path)
+            else:
+                file_path = Path("/") / path
             temp_dir = Path(tempfile.gettempdir()).resolve()
             daggr_cache = get_daggr_cache_dir().resolve()
 
@@ -681,13 +688,13 @@ class DaggrServer:
         }
 
     def _file_to_url(self, value: Any) -> Any:
-        if (
-            isinstance(value, str)
-            and value.startswith("/")
-            and not value.startswith("/file/")
-        ):
-            if Path(value).exists():
-                return f"/file{value}"
+        if isinstance(value, str) and not value.startswith("/file/"):
+            path = Path(value)
+            if path.is_absolute() and path.exists():
+                normalized = value.replace("\\", "/")
+                if normalized.startswith("/"):
+                    return f"/file{normalized}"
+                return f"/file/{normalized}"
         return value
 
     def _validate_file_value(self, value: Any, comp_type: str) -> str | None:
@@ -746,7 +753,7 @@ class DaggrServer:
                         wav_file.setframerate(sample_rate)
                         wav_file.writeframes(audio_array.tobytes())
 
-                return f"/file{file_path}"
+                return self._file_to_url(str(file_path))
         return self._file_to_url(value)
 
     def _transform_file_paths(self, data: Any) -> Any:
