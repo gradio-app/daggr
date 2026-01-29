@@ -47,7 +47,7 @@ node = GradioNode(
 )
 ```
 
-Search Spaces: `https://huggingface.co/api/spaces/semantic-search?q=text+to+speech&sdk=gradio`
+Find Spaces (semantic search for trending Spaces by task): `https://huggingface.co/api/spaces/semantic-search?q=text+to+speech&sdk=gradio`
 
 ### FnNode - Python Functions
 
