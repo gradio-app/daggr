@@ -16,6 +16,10 @@ Full docs: https://raw.githubusercontent.com/gradio-app/daggr/refs/heads/main/RE
 
 ## Quick Start
 
+```bash
+uv init && uv add daggr  # Set up project with daggr
+```
+
 ```python
 from daggr import GradioNode, FnNode, InferenceNode, Graph, ItemList
 import gradio as gr
@@ -170,7 +174,7 @@ def combine(video: str|dict, audio: str|dict) -> str:
 ## Run
 
 ```bash
-uvx --python 3.12 daggr workflow.py &  # Launch in background, hot reloads on file changes
+uv run daggr workflow.py &  # Launch in background, hot reloads on file changes
 ```
 
 ## Authentication
