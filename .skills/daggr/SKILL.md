@@ -78,6 +78,9 @@ node = InferenceNode(
 )
 ```
 
+**Auth:** InferenceNode and ZeroGPU Spaces require a HF token. Ask user to create one:
+`https://huggingface.co/settings/tokens/new?ownUserPermissions=inference.serverless.write&tokenType=fineGrained`
+
 ## Port Connections
 
 ```python
