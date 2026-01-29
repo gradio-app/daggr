@@ -647,7 +647,11 @@ export HF_TOKEN=hf_xxxxx
 
 ## LLM-Friendly Error Messages
 
-Daggr is designed to be LLM-friendly, making it easy for AI coding assistants to generate and debug workflows. 
+Daggr is designed to be LLM-friendly, making it easy for AI coding assistants to generate and debug workflows. To give your AI coding assistant context on how to use daggr, you can install the daggr skill:
+
+```bash
+npx skills add gradio-app/daggr
+``` 
 
 <img width="3444" height="2342" alt="image" src="https://github.com/user-attachments/assets/b054d648-0f75-43a8-9335-1480d6bf9263" />
 
