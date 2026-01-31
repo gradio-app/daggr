@@ -14,14 +14,29 @@ We welcome contributions that:
 
 1. Fork and clone the repository
 2. Install the package with development dependencies
+
    ```bash
    pip install -e ".[dev]"
    ```
+
 3. Run tests before submitting changes:
+
    ```bash
    python -m pytest
    ```
-4. Format your code using Ruff:
+
+4. Build the frontend:
+   The project includes a Svelte-based frontend that must be built for the app to function correctly.
+
+   ```bash
+   cd daggr/frontend
+   npm install
+   npm run build
+   cd ../..
+   ```
+
+5. Format your code using Ruff:
+
    ```bash
    ruff check --fix --select I && ruff format
    ```
