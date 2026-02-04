@@ -24,5 +24,3 @@ def test_cache_directories_respect_hf_home_env_var():
             hf_home_path = Path(custom_hf_home)
             assert daggr_cache.is_relative_to(hf_home_path)
             assert spaces_cache.is_relative_to(hf_home_path)
-
-            importlib.reload(huggingface_hub.constants)
