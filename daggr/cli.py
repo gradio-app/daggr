@@ -117,6 +117,10 @@ def main():
         action="store_true",
         help="Skip confirmation prompts (use with --delete-sheets)",
     )
+    parser.add_argument(
+        "--state-db-path",
+        help="Optional path to SQLite state database. Overrides DAGGR_DB_PATH env var. Defaults to HuggingFace cache.",
+    )
 
     args = parser.parse_args()
 
@@ -138,6 +142,8 @@ def main():
     os.environ["DAGGR_SCRIPT_PATH"] = str(script_path)
     os.environ["DAGGR_HOST"] = args.host
     os.environ["DAGGR_PORT"] = str(args.port)
+    if args.state_db_path:
+        os.environ["DAGGR_DB_PATH"] = str(Path(args.state_db_path).resolve())
 
     if args.no_reload:
         _run_script(script_path, args.host, args.port)

@@ -46,7 +46,7 @@ class DaggrServer:
     def __init__(self, graph: Graph):
         self.graph = graph
         self.executor = AsyncExecutor(graph)
-        self.state = SessionState()
+        self.state = SessionState(db_path=os.environ.get("DAGGR_DB_PATH"))
         self.app = FastAPI(title=graph.name)
         self.connections: dict[str, WebSocket] = {}
         self._setup_routes()
