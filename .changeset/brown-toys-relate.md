@@ -1,5 +1,5 @@
 ---
-"daggr": minor
+"daggr": patch
 ---
 
 feat:Fix cache
