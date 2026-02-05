@@ -23,7 +23,9 @@
 
 	let isOpen = $state(false);
 	let inputEl: HTMLInputElement | null = $state(null);
+	let inputWrapEl: HTMLDivElement | null = $state(null);
 	let filterText = $state('');
+	let dropdownPosition = $state({ top: 0, left: 0, width: 0 });
 
 	let choicesNames = $derived(choices.map(c => c[0]));
 	let choicesValues = $derived(choices.map(c => c[1]));
@@ -42,6 +44,17 @@
 		return choices.filter(([name]) => name.toLowerCase().includes(lower));
 	});
 
+	function updatePosition() {
+		if (inputWrapEl) {
+			const rect = inputWrapEl.getBoundingClientRect();
+			dropdownPosition = {
+				top: rect.bottom + 2,
+				left: rect.left,
+				width: rect.width
+			};
+		}
+	}
+
 	function handleSelect(internalValue: string | number) {
 		onchange?.(internalValue);
 		isOpen = false;
@@ -50,6 +63,7 @@
 
 	function handleInputFocus() {
 		if (!disabled) {
+			updatePosition();
 			isOpen = true;
 			filterText = '';
 		}
@@ -76,10 +90,12 @@
 	}
 </script>
 
+<svelte:window onscroll={updatePosition} onresize={updatePosition} />
+
 <div class="gr-dropdown-wrap">
 	<span class="gr-label">{label}</span>
 	<div class="dropdown-container">
-		<div class="input-wrap">
+		<div class="input-wrap" bind:this={inputWrapEl}>
 			<input
 				bind:this={inputEl}
 				type="text"
@@ -99,21 +115,25 @@
 				</svg>
 			</button>
 		</div>
-		{#if isOpen && filteredChoices.length > 0}
-			<div class="options">
-				{#each filteredChoices as [displayValue, internalValue]}
-					<button
-						class="option"
-						class:selected={value === internalValue}
-						onmousedown={(e) => { e.preventDefault(); handleSelect(internalValue); }}
-					>
-						{displayValue}
-					</button>
-				{/each}
-			</div>
-		{/if}
 	</div>
 </div>
+
+{#if isOpen && filteredChoices.length > 0}
+	<div 
+		class="options-portal"
+		style="top: {dropdownPosition.top}px; left: {dropdownPosition.left}px; width: {dropdownPosition.width}px;"
+	>
+		{#each filteredChoices as [displayValue, internalValue]}
+			<button
+				class="option"
+				class:selected={value === internalValue}
+				onmousedown={(e) => { e.preventDefault(); handleSelect(internalValue); }}
+			>
+				{displayValue}
+			</button>
+		{/each}
+	</div>
+{/if}
 
 <style>
 	.gr-dropdown-wrap {
@@ -194,17 +214,14 @@
 		height: 100%;
 	}
 
-	.options {
-		position: absolute;
-		top: 100%;
-		left: 10px;
-		right: 10px;
+	.options-portal {
+		position: fixed;
 		background: #2a2a2a;
 		border: 1px solid #444;
 		border-radius: 4px;
 		max-height: 150px;
 		overflow-y: auto;
-		z-index: 100;
+		z-index: 10000;
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 	}
 
@@ -230,4 +247,3 @@
 		color: #f97316;
 	}
 </style>
-

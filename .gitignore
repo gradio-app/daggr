@@ -1,5 +1,6 @@
 trackio/__pycache__/
 tests/__pycache__/
+test-results/
 .trackio/
 .gradio/
 trackio.db
