@@ -26,12 +26,14 @@ def browser() -> Generator[Browser, None, None]:
 
 
 @pytest.fixture
-def page(browser: Browser, request: pytest.FixtureRequest) -> Generator[Page, None, None]:
+def page(
+    browser: Browser, request: pytest.FixtureRequest
+) -> Generator[Page, None, None]:
     video_option = request.config.getoption("--video", default=None)
     if video_option == "on":
         context = browser.new_context(
             record_video_dir="test-results/",
-            record_video_size={"width": 1280, "height": 720}
+            record_video_size={"width": 1280, "height": 720},
         )
         page = context.new_page()
     else:
@@ -44,4 +46,6 @@ def page(browser: Browser, request: pytest.FixtureRequest) -> Generator[Page, No
 
 
 def pytest_addoption(parser: pytest.Parser):
-    parser.addoption("--video", action="store", default=None, help="Record video: on/off")
+    parser.addoption(
+        "--video", action="store", default=None, help="Record video: on/off"
+    )

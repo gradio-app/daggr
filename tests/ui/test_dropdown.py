@@ -46,9 +46,10 @@ def test_dropdown_options_render_outside_node(page: Page, temp_db: str):
 
         assert node_box is not None
         assert options_box is not None
-        assert options_box["y"] + options_box["height"] > node_box["y"] + node_box["height"], (
-            "Dropdown options should extend below the node boundary"
-        )
+        assert (
+            options_box["y"] + options_box["height"]
+            > node_box["y"] + node_box["height"]
+        ), "Dropdown options should extend below the node boundary"
 
         option_buttons = options_portal.locator(".option")
         expect(option_buttons).to_have_count(4)
@@ -58,4 +59,3 @@ def test_dropdown_options_render_outside_node(page: Page, temp_db: str):
         expect(dropdown_input).to_have_attribute("placeholder", "Option B")
     finally:
         server.close()
-
