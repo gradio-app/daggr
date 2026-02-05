@@ -64,6 +64,7 @@ class Node(ABC):
         self._id = Node._id_counter
         Node._id_counter += 1
         self._name = name or ""
+        self._name_explicitly_set = bool(name)
         self._input_ports: list[str] = []
         self._output_ports: list[str] = []
         self._input_components: dict[str, Any] = {}
@@ -71,6 +72,15 @@ class Node(ABC):
         self._item_list_schemas: dict[str, dict[str, Any]] = {}
         self._fixed_inputs: dict[str, Any] = {}
         self._port_connections: dict[str, Any] = {}
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @name.setter
+    def name(self, value: str) -> None:
+        self._name = value
+        self._name_explicitly_set = True
 
     def __getattr__(self, name: str) -> Port:
         if name.startswith("_"):

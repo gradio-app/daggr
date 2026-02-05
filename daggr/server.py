@@ -655,7 +655,7 @@ class DaggrServer:
         from daggr.node import GradioNode
 
         variant_name = variant._name
-        if isinstance(variant, GradioNode):
+        if isinstance(variant, GradioNode) and not variant._name_explicitly_set:
             variant_name = f"{variant._src}"
             if variant._api_name:
                 variant_name += f" ({variant._api_name})"
