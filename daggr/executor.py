@@ -20,7 +20,7 @@ class FileValue(str):
     pass
 
 
-def _download_file(url: str) -> str:
+def _download_file(url: str, hf_token: str | None = None) -> str:
     import hashlib
     from pathlib import Path
     from urllib.parse import urlparse
@@ -38,8 +38,11 @@ def _download_file(url: str) -> str:
     local_path = files_dir / filename
 
     if not local_path.exists():
+        headers = {}
+        if hf_token:
+            headers["Authorization"] = f"Bearer {hf_token}"
         with httpx.Client(follow_redirects=True) as client:
-            response = client.get(url)
+            response = client.get(url, headers=headers)
             response.raise_for_status()
             local_path.write_bytes(response.content)
 
@@ -394,7 +397,9 @@ class AsyncExecutor:
                 raw_result = client.predict(api_name=api_name, **call_inputs)
                 if node._postprocess:
                     raw_result = self._apply_postprocess(node._postprocess, raw_result)
-                result = self._map_gradio_result(node, raw_result)
+                result = self._map_gradio_result(
+                    node, raw_result, hf_token=session.hf_token
+                )
             else:
                 result = None
 
@@ -476,7 +481,9 @@ class AsyncExecutor:
                     raw_result = self._apply_postprocess(
                         variant._postprocess, raw_result
                     )
-                result = self._map_gradio_result(variant, raw_result)
+                result = self._map_gradio_result(
+                    variant, raw_result, hf_token=session.hf_token
+                )
             else:
                 result = None
 
@@ -720,24 +727,28 @@ class AsyncExecutor:
             return postprocess(*raw_result)
         return postprocess(raw_result)
 
-    def _extract_file_urls(self, data: Any) -> Any:
+    def _extract_file_urls(
+        self, data: Any, hf_token: str | None = None
+    ) -> Any:
         from gradio_client.utils import is_file_obj_with_meta, traverse
 
         def download_and_wrap(file_obj: dict) -> FileValue:
             url = file_obj.get("url")
             if url:
-                local_path = _download_file(url)
+                local_path = _download_file(url, hf_token=hf_token)
                 return FileValue(local_path)
             path = file_obj.get("path", "")
             return FileValue(path)
 
         return traverse(data, download_and_wrap, is_file_obj_with_meta)
 
-    def _map_gradio_result(self, node, raw_result: Any) -> dict[str, Any]:
+    def _map_gradio_result(
+        self, node, raw_result: Any, hf_token: str | None = None
+    ) -> dict[str, Any]:
         if raw_result is None:
             return {}
 
-        raw_result = self._extract_file_urls(raw_result)
+        raw_result = self._extract_file_urls(raw_result, hf_token=hf_token)
 
         output_ports = node._output_ports
         if not output_ports:

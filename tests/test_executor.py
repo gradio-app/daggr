@@ -83,3 +83,49 @@ class TestSequentialExecutor:
         result2 = executor.execute_node("process", {})
         assert result1["output"] == 1
         assert result2["output"] == 2
+
+
+class TestDownloadFileAuth:
+    def test_sends_auth_header_when_token_provided(self, tmp_path):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.content = b"fake audio data"
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get.return_value = mock_response
+
+        with (
+            patch("httpx.Client", return_value=mock_client),
+            patch("daggr.state.get_daggr_files_dir", return_value=tmp_path),
+        ):
+            result = _download_file(
+                "https://my-private-space.hf.space/file=audio.wav",
+                hf_token="hf_test_token_123",
+            )
+
+        mock_client.get.assert_called_once()
+        _, kwargs = mock_client.get.call_args
+        assert kwargs["headers"]["Authorization"] == "Bearer hf_test_token_123"
+        assert result.endswith(".wav")
+
+    def test_no_auth_header_without_token(self, tmp_path):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.content = b"public file data"
+
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get.return_value = mock_response
+
+        with (
+            patch("httpx.Client", return_value=mock_client),
+            patch("daggr.state.get_daggr_files_dir", return_value=tmp_path),
+        ):
+            _download_file("https://public-space.hf.space/file=image.png")
+
+        mock_client.get.assert_called_once()
+        _, kwargs = mock_client.get.call_args
+        assert kwargs["headers"] == {}
