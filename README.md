@@ -253,6 +253,52 @@ llm = InferenceNode(
 
 > **Tip:** `InferenceNode` and `GradioNode` automatically run concurrently and pass your HF token for ZeroGPU, private Spaces, and gated models. Prefer these over `FnNode` when possible.
 
+### Preprocessing and Postprocessing
+
+Both `GradioNode` and `FnNode` support optional `preprocess` and `postprocess` hooks that transform data on the way in and out of a node.
+
+**`preprocess`** receives the input dict and returns a modified dict before the node executes. This is useful when an upstream node outputs data in a different format than the downstream node expects:
+
+```python
+def fix_image_input(inputs):
+    img = inputs.get("image")
+    if isinstance(img, dict) and "path" in img:
+        inputs["image"] = img["path"]
+    return inputs
+
+describer = GradioNode(
+    "vikhyatk/moondream2",
+    api_name="/answer_question",
+    preprocess=fix_image_input,
+    inputs={"image": image_gen.result, "prompt": "Describe this image."},
+    outputs={"description": gr.Textbox()},
+)
+```
+
+**`postprocess`** receives the raw return values from the node and lets you reshape them before they are mapped to output ports. If the node returns multiple values (a tuple), each value is passed as a separate argument. This is essential when working with Spaces that return extra values you don't need:
+
+```python
+background_remover = GradioNode(
+    "hf-applications/background-removal",
+    api_name="/image",
+    inputs={"image": some_node.image},
+    postprocess=lambda original, final: final,  # Space returns (original, processed); keep only processed
+    outputs={"image": gr.Image(label="Result")},
+)
+```
+
+Another common pattern is extracting a specific item from a complex return value:
+
+```python
+image_gen = GradioNode(
+    "multimodalart/stable-cascade",
+    api_name="/run",
+    inputs={...},
+    postprocess=lambda images, seed_used, seed_number: images[0]["image"],  # Extract first image
+    outputs={"image": gr.Image(label="Generated Image")},
+)
+```
+
 ### Node Concurrency
 
 Different node types have different concurrency behaviors:
