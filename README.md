@@ -109,9 +109,9 @@ Each node has **input ports** and **output ports**, which correspond to the node
 - A fixed value → passed directly, doesn't appear in UI
 - A `Callable` → called each time the node runs (useful for random seeds)
 
-**Output ports** can be connected to:
+**Output ports** can be:
 - A Gradio component → displays the output in the node's card
-- `None` → output is hidden but can still connect to downstream nodes
+- `None` → output not displayed in the node's card but port can still connect to downstream nodes
 
 ### Node Types
 
