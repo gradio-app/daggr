@@ -122,8 +122,8 @@
 
 <style>
 	.gr-code-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		overflow: hidden;
 	}
@@ -140,7 +140,7 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 6px;
-		background: #222;
+		background: var(--background-fill-secondary);
 	}
 
 	.header-left {
@@ -152,15 +152,15 @@
 	.gr-label {
 		font-size: 10px;
 		font-weight: 400;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		padding-left: 4px;
 	}
 
 	.language-badge {
 		font-size: 9px;
 		padding: 2px 6px;
-		background: #333;
-		color: #888;
+		background: var(--border-color-primary);
+		color: var(--body-text-color-subdued);
 		border-radius: 3px;
 		text-transform: lowercase;
 	}
@@ -175,7 +175,7 @@
 		height: 20px;
 		padding: 3px;
 		border: none;
-		background: rgba(255, 255, 255, 0.08);
+		background: color-mix(in srgb, var(--body-text-color) 8%, transparent);
 		border-radius: 4px;
 		cursor: pointer;
 		display: flex;
@@ -187,19 +187,19 @@
 	.action-btn svg {
 		width: 12px;
 		height: 12px;
-		color: #888;
+		color: var(--body-text-color-subdued);
 	}
 
 	.action-btn:hover {
-		background: rgba(255, 255, 255, 0.15);
+		background: color-mix(in srgb, var(--body-text-color) 15%, transparent);
 	}
 
 	.action-btn:hover svg {
-		color: #fff;
+		color: var(--body-text-color);
 	}
 
 	.action-btn.success svg {
-		color: #22c55e;
+		color: var(--primary-500, #22c55e);
 	}
 
 	.code-container {
@@ -229,8 +229,8 @@
 		display: flex;
 		flex-direction: column;
 		padding: 10px 0;
-		background: #1e1e1e;
-		border-right: 1px solid #333;
+		background: var(--background-fill-secondary);
+		border-right: 1px solid var(--border-color-primary);
 		user-select: none;
 		flex-shrink: 0;
 	}
@@ -240,7 +240,7 @@
 		font-family: 'SF Mono', Monaco, Consolas, monospace;
 		font-size: 11px;
 		line-height: 1.5;
-		color: #555;
+		color: var(--input-placeholder-color);
 		text-align: right;
 		min-width: 30px;
 	}
@@ -252,7 +252,7 @@
 		font-family: 'SF Mono', Monaco, Consolas, monospace;
 		font-size: 11px;
 		line-height: 1.5;
-		color: #e5e7eb;
+		color: var(--body-text-color);
 		overflow-x: auto;
 		white-space: pre;
 	}
@@ -268,7 +268,7 @@
 		font-family: 'SF Mono', Monaco, Consolas, monospace;
 		font-size: 11px;
 		line-height: 1.5;
-		color: #e5e7eb;
+		color: var(--body-text-color);
 		background: transparent;
 		border: none;
 		outline: none;

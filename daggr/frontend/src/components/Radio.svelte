@@ -35,8 +35,8 @@
 
 <style>
 	.gr-radio-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		overflow: hidden;
 	}
@@ -45,7 +45,7 @@
 		display: block;
 		font-size: 10px;
 		font-weight: 400;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		padding: 6px 10px 4px;
 	}
 
@@ -61,21 +61,21 @@
 		align-items: center;
 		gap: 6px;
 		padding: 4px 8px;
-		background: #2a2a2a;
-		border: 1px solid #3a3a3a;
+		background: var(--input-background-fill);
+		border: 1px solid var(--input-border-color);
 		border-radius: 4px;
 		cursor: pointer;
 		transition: all 0.15s;
 	}
 
 	.choice:hover:not(.disabled) {
-		border-color: #444;
-		background: #333;
+		border-color: var(--border-color-primary);
+		background: var(--background-fill-secondary);
 	}
 
 	.choice.selected {
-		background: rgba(249, 115, 22, 0.15);
-		border-color: rgba(249, 115, 22, 0.4);
+		background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+		border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
 	}
 
 	.choice.disabled {
@@ -94,8 +94,8 @@
 	.radio-mark {
 		width: 12px;
 		height: 12px;
-		background: #222;
-		border: 1px solid #444;
+		background: var(--checkbox-background-color);
+		border: 1px solid var(--checkbox-border-color);
 		border-radius: 50%;
 		display: flex;
 		align-items: center;
@@ -105,7 +105,7 @@
 	}
 
 	.choice input:checked ~ .radio-mark {
-		border-color: #f97316;
+		border-color: var(--color-accent);
 	}
 
 	.radio-mark::after {
@@ -113,7 +113,7 @@
 		display: none;
 		width: 6px;
 		height: 6px;
-		background: #f97316;
+		background: var(--color-accent);
 		border-radius: 50%;
 	}
 
@@ -123,7 +123,7 @@
 
 	.choice-label {
 		font-size: 11px;
-		color: #e5e7eb;
+		color: var(--body-text-color);
 	}
 </style>
 

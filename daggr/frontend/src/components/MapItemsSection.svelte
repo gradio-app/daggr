@@ -53,8 +53,8 @@
 
 <style>
 	.map-items-section {
-		border-top: 1px solid rgba(34, 197, 94, 0.2);
-		background: rgba(34, 197, 94, 0.03);
+		border-top: 1px solid color-mix(in srgb, var(--primary-500, #22c55e) 20%, transparent);
+		background: color-mix(in srgb, var(--primary-500, #22c55e) 3%, transparent);
 	}
 
 	.map-items-header {
@@ -62,13 +62,13 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 6px 10px;
-		border-bottom: 1px solid rgba(34, 197, 94, 0.1);
+		border-bottom: 1px solid color-mix(in srgb, var(--primary-500, #22c55e) 10%, transparent);
 	}
 
 	.map-items-title {
 		font-size: 10px;
 		font-weight: 600;
-		color: #22c55e;
+		color: var(--primary-500, #22c55e);
 		text-transform: uppercase;
 		letter-spacing: 0.5px;
 	}
@@ -83,7 +83,7 @@
 		align-items: center;
 		gap: 8px;
 		padding: 8px 10px;
-		border-bottom: 1px solid rgba(34, 197, 94, 0.08);
+		border-bottom: 1px solid color-mix(in srgb, var(--primary-500, #22c55e) 8%, transparent);
 	}
 
 	.map-item:last-child {
@@ -100,18 +100,18 @@
 	.map-item-preview {
 		flex: 1;
 		font-size: 10px;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 
 	.map-item.has-output .map-item-preview {
-		color: #aaa;
+		color: var(--body-text-color);
 	}
 
 	.map-item-pending {
-		color: #666;
+		color: var(--neutral-500);
 		font-style: italic;
 	}
 
@@ -119,8 +119,8 @@
 		width: 20px;
 		height: 20px;
 		border: none;
-		background: rgba(34, 197, 94, 0.15);
-		color: #22c55e;
+		background: color-mix(in srgb, var(--primary-500, #22c55e) 15%, transparent);
+		color: var(--primary-500, #22c55e);
 		font-size: 10px;
 		border-radius: 4px;
 		cursor: pointer;
@@ -134,7 +134,7 @@
 	}
 
 	.map-item-replay:hover {
-		background: rgba(34, 197, 94, 0.3);
+		background: color-mix(in srgb, var(--primary-500, #22c55e) 30%, transparent);
 	}
 </style>
 

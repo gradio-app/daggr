@@ -7,17 +7,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/theme.css">
   <style>
     * { margin: 0; box-sizing: border-box; }
     body {
-      background: #000;
+      background: var(--body-background-fill, #000);
       min-height: 100vh;
       font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
       overflow: hidden;
+      color: var(--body-text-color, #fff);
     }
   </style>
 </head>
-<body>
+<body class="dark">
   <div id="app"></div>
   <script type="module" src="/src/main.ts"></script>
 </body>

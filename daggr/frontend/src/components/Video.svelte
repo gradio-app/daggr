@@ -199,8 +199,8 @@
 
 <style>
 	.gr-video-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		overflow: hidden;
 	}
@@ -215,7 +215,7 @@
 	.gr-label {
 		font-size: 10px;
 		font-weight: 400;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		padding-left: 4px;
 	}
 
@@ -229,7 +229,7 @@
 		height: 20px;
 		padding: 3px;
 		border: none;
-		background: rgba(255, 255, 255, 0.08);
+		background: color-mix(in srgb, var(--body-text-color) 8%, transparent);
 		border-radius: 4px;
 		cursor: pointer;
 		display: flex;
@@ -241,29 +241,29 @@
 	.action-btn svg {
 		width: 12px;
 		height: 12px;
-		color: #888;
+		color: var(--body-text-color-subdued);
 	}
 
 	.action-btn:hover {
-		background: rgba(255, 255, 255, 0.15);
+		background: color-mix(in srgb, var(--body-text-color) 15%, transparent);
 	}
 
 	.action-btn:hover svg {
-		color: #fff;
+		color: var(--body-text-color);
 	}
 
 	.action-btn.recording {
-		background: #dc2626;
+		background: var(--error-border-color);
 		animation: pulse-recording 1.5s ease-in-out infinite;
 	}
 
 	.action-btn.recording svg {
-		color: #fff;
+		color: var(--button-primary-text-color);
 	}
 
 	@keyframes pulse-recording {
-		0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
-		50% { box-shadow: 0 0 0 4px rgba(220, 38, 38, 0); }
+		0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--error-border-color) 40%, transparent); }
+		50% { box-shadow: 0 0 0 4px transparent; }
 	}
 
 	.video-container {
@@ -275,7 +275,7 @@
 		width: 100%;
 		max-height: 150px;
 		border-radius: 4px;
-		background: #000;
+		background: var(--body-background-fill);
 	}
 
 	.recording-preview .recording-indicator {
@@ -289,14 +289,14 @@
 		padding: 2px 6px;
 		border-radius: 3px;
 		font-size: 10px;
-		color: #dc2626;
+		color: var(--error-border-color);
 		font-weight: 600;
 	}
 
 	.rec-dot {
 		width: 6px;
 		height: 6px;
-		background: #dc2626;
+		background: var(--error-border-color);
 		border-radius: 50%;
 		animation: blink 1s ease-in-out infinite;
 	}
@@ -308,7 +308,7 @@
 
 	.gr-empty {
 		font-size: 11px;
-		color: #555;
+		color: var(--input-placeholder-color);
 		font-style: italic;
 		padding: 6px;
 		text-align: center;

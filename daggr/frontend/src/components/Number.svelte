@@ -81,8 +81,8 @@
 
 <style>
 	.gr-number-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		overflow: hidden;
 	}
@@ -91,7 +91,7 @@
 		display: block;
 		font-size: 10px;
 		font-weight: 400;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		padding: 6px 10px 0;
 	}
 
@@ -107,7 +107,7 @@
 		height: 24px;
 		padding: 4px;
 		border: none;
-		background: #2a2a2a;
+		background: var(--input-background-fill);
 		border-radius: 4px;
 		cursor: pointer;
 		display: flex;
@@ -120,15 +120,15 @@
 	.step-btn svg {
 		width: 12px;
 		height: 12px;
-		color: #888;
+		color: var(--body-text-color-subdued);
 	}
 
 	.step-btn:hover:not(:disabled) {
-		background: #333;
+		background: var(--background-fill-secondary);
 	}
 
 	.step-btn:hover:not(:disabled) svg {
-		color: #fff;
+		color: var(--body-text-color);
 	}
 
 	.step-btn:disabled {
@@ -142,20 +142,20 @@
 		padding: 4px 8px;
 		font-size: 11px;
 		font-family: 'SF Mono', Monaco, monospace;
-		color: #e5e7eb;
-		background: #2a2a2a;
-		border: 1px solid #3a3a3a;
+		color: var(--body-text-color);
+		background: var(--input-background-fill);
+		border: 1px solid var(--input-border-color);
 		border-radius: 4px;
 		outline: none;
 		text-align: center;
 	}
 
 	.gr-input:focus {
-		border-color: #f97316;
+		border-color: var(--color-accent);
 	}
 
 	.gr-input::placeholder {
-		color: #555;
+		color: var(--input-placeholder-color);
 	}
 
 	.gr-input:disabled {

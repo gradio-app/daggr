@@ -227,8 +227,8 @@
 	}
 
 	.gr-textbox-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		overflow: hidden;
 	}
@@ -237,7 +237,7 @@
 		display: block;
 		font-size: 10px;
 		font-weight: 400;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		padding: 6px 10px 0;
 	}
 
@@ -246,7 +246,7 @@
 		padding: 4px 10px 8px;
 		font-size: 11px;
 		font-family: inherit;
-		color: #e5e7eb;
+		color: var(--body-text-color);
 		background: transparent;
 		border: none;
 		outline: none;
@@ -254,11 +254,11 @@
 	}
 
 	.gr-input::placeholder {
-		color: #555;
+		color: var(--input-placeholder-color);
 	}
 
 	.gr-textbox-wrap:focus-within {
-		border-color: #f97316;
+		border-color: var(--color-accent);
 	}
 
 	.gr-input:disabled {
@@ -277,30 +277,30 @@
 	.gr-checkbox-wrap input[type="checkbox"] {
 		width: 14px;
 		height: 14px;
-		accent-color: #f97316;
+		accent-color: var(--color-accent);
 		cursor: pointer;
 	}
 
 	.gr-check-label {
 		font-size: 11px;
-		color: #e5e7eb;
+		color: var(--body-text-color);
 	}
 
 	.gr-fallback {
 		font-size: 10px;
-		color: #9ca3af;
-		background: #1a1a1a;
-		border: 1px solid #333;
+		color: var(--body-text-color-subdued);
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		padding: 8px 10px;
 		border-radius: 6px;
 	}
 
 	.gr-fallback .fallback-type {
 		display: inline-block;
-		color: #666;
+		color: var(--neutral-500);
 		font-style: italic;
 		font-size: 9px;
-		background: #2a2a2a;
+		background: var(--background-fill-secondary);
 		padding: 2px 6px;
 		border-radius: 4px;
 		margin-bottom: 4px;

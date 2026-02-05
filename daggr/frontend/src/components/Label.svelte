@@ -66,8 +66,8 @@
 
 <style>
 	.gr-label-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		overflow: hidden;
 	}
@@ -79,7 +79,7 @@
 	.gr-label {
 		font-size: 10px;
 		font-weight: 400;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		padding-left: 4px;
 	}
 
@@ -87,7 +87,7 @@
 		padding: 8px 10px;
 		font-size: 18px;
 		font-weight: 600;
-		color: #f97316;
+		color: var(--color-accent);
 		text-align: center;
 	}
 
@@ -112,7 +112,7 @@
 
 	.confidence-label {
 		font-size: 11px;
-		color: #e5e7eb;
+		color: var(--body-text-color);
 	}
 
 	.confidence-item.top .confidence-label {
@@ -122,30 +122,30 @@
 	.confidence-value {
 		font-size: 10px;
 		font-family: 'SF Mono', Monaco, monospace;
-		color: #888;
+		color: var(--body-text-color-subdued);
 	}
 
 	.confidence-bar-bg {
 		height: 4px;
-		background: #2a2a2a;
+		background: var(--input-background-fill);
 		border-radius: 2px;
 		overflow: hidden;
 	}
 
 	.confidence-bar {
 		height: 100%;
-		background: #555;
+		background: var(--neutral-500);
 		border-radius: 2px;
 		transition: width 0.3s ease;
 	}
 
 	.confidence-bar.top {
-		background: #f97316;
+		background: var(--color-accent);
 	}
 
 	.gr-empty {
 		font-size: 11px;
-		color: #555;
+		color: var(--input-placeholder-color);
 		font-style: italic;
 		padding: 6px 10px;
 		text-align: center;

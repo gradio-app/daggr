@@ -133,8 +133,8 @@
 
 <style>
 	.gr-json-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		overflow: hidden;
 	}
@@ -162,7 +162,7 @@
 	.gr-label {
 		font-size: 10px;
 		font-weight: 400;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		padding-left: 4px;
 	}
 
@@ -176,7 +176,7 @@
 		height: 20px;
 		padding: 3px;
 		border: none;
-		background: rgba(255, 255, 255, 0.08);
+		background: color-mix(in srgb, var(--body-text-color) 8%, transparent);
 		border-radius: 4px;
 		cursor: pointer;
 		display: flex;
@@ -188,19 +188,19 @@
 	.action-btn svg {
 		width: 12px;
 		height: 12px;
-		color: #888;
+		color: var(--body-text-color-subdued);
 	}
 
 	.action-btn:hover {
-		background: rgba(255, 255, 255, 0.15);
+		background: color-mix(in srgb, var(--body-text-color) 15%, transparent);
 	}
 
 	.action-btn:hover svg {
-		color: #fff;
+		color: var(--body-text-color);
 	}
 
 	.action-btn.success svg {
-		color: #22c55e;
+		color: var(--primary-500, #22c55e);
 	}
 
 	.json-content {
@@ -221,40 +221,40 @@
 
 	.json-children {
 		padding-left: 16px;
-		border-left: 1px solid #333;
+		border-left: 1px solid var(--border-color-primary);
 		margin-left: 4px;
 	}
 
 	.json-key {
-		color: #93c5fd;
+		color: var(--secondary-400, #93c5fd);
 	}
 
 	.json-colon {
-		color: #666;
+		color: var(--neutral-500);
 	}
 
 	.json-string {
-		color: #a5d6a7;
+		color: var(--primary-300, #a5d6a7);
 	}
 
 	.json-number {
-		color: #ffcc80;
+		color: var(--color-accent-soft, #ffcc80);
 	}
 
 	.json-boolean {
-		color: #ce93d8;
+		color: var(--secondary-300, #ce93d8);
 	}
 
 	.json-null {
-		color: #ef9a9a;
+		color: var(--error-text-color, #ef9a9a);
 	}
 
 	.json-undefined {
-		color: #666;
+		color: var(--neutral-500);
 	}
 
 	.json-bracket {
-		color: #888;
+		color: var(--body-text-color-subdued);
 		cursor: pointer;
 		list-style: none;
 		display: inline;
@@ -269,7 +269,7 @@
 		display: inline-block;
 		width: 12px;
 		font-size: 8px;
-		color: #666;
+		color: var(--neutral-500);
 		transition: transform 0.15s;
 	}
 
@@ -278,7 +278,7 @@
 	}
 
 	.json-preview {
-		color: #555;
+		color: var(--input-placeholder-color);
 		font-size: 10px;
 		margin-left: 4px;
 	}
@@ -289,7 +289,7 @@
 
 	.gr-empty {
 		font-size: 11px;
-		color: #555;
+		color: var(--input-placeholder-color);
 		font-style: italic;
 		padding: 6px 10px;
 	}

@@ -10,13 +10,21 @@ from typing import TYPE_CHECKING, Any
 
 import uvicorn
 from fastapi import FastAPI, Header, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    JSONResponse,
+    PlainTextResponse,
+    Response,
+)
 
 from daggr.executor import AsyncExecutor
 from daggr.session import ExecutionSession
 from daggr.state import SessionState
 
 if TYPE_CHECKING:
+    from gradio.themes import Base as Theme
+
     from daggr.graph import Graph
 
 
@@ -42,13 +50,52 @@ def _find_available_port(host: str, start_port: int) -> int:
     )
 
 
+def _get_theme(theme: "Theme | str | None") -> "Theme":
+    """Get a Gradio theme instance from a theme specification.
+
+    Args:
+        theme: Can be a Theme instance, a string name like "default", "soft",
+            "monochrome", "glass", or a Hub theme like "gradio/seafoam".
+
+    Returns:
+        A Theme instance.
+    """
+    from gradio.themes import Default
+
+    if theme is None:
+        return Default()
+
+    if isinstance(theme, str):
+        from gradio.themes import Base, Default, Glass, Monochrome, Soft
+
+        theme_mapping = {
+            "default": Default,
+            "soft": Soft,
+            "monochrome": Monochrome,
+            "glass": Glass,
+            "base": Base,
+        }
+        theme_lower = theme.lower()
+        if theme_lower in theme_mapping:
+            return theme_mapping[theme_lower]()
+        # Try loading from Hub
+        try:
+            return Base.from_hub(theme)
+        except Exception:
+            return Default()
+
+    return theme
+
+
 class DaggrServer:
-    def __init__(self, graph: Graph):
+    def __init__(self, graph: Graph, theme: "Theme | str | None" = None):
         self.graph = graph
         self.executor = AsyncExecutor(graph)
         self.state = SessionState(db_path=os.environ.get("DAGGR_DB_PATH"))
         self.app = FastAPI(title=graph.name)
         self.connections: dict[str, WebSocket] = {}
+        self.theme = _get_theme(theme)
+        self.theme_css = self.theme._get_theme_css()
         self._setup_routes()
 
     def _extract_token_from_header(self, authorization: str | None) -> str | None:
@@ -76,6 +123,10 @@ class DaggrServer:
                 f"Frontend not found at {frontend_dir}. "
                 "If developing, run 'npm run build' in daggr/frontend/"
             )
+
+        @self.app.get("/theme.css", response_class=PlainTextResponse)
+        async def get_theme_css():
+            return PlainTextResponse(self.theme_css, media_type="text/css")
 
         @self.app.get("/api/graph")
         async def get_graph():
@@ -524,9 +575,20 @@ class DaggrServer:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{self.graph.name}</title>
+    <link rel="stylesheet" href="/theme.css">
+    <style>
+        * {{ margin: 0; box-sizing: border-box; }}
+        body {{
+            background: var(--body-background-fill, #000);
+            min-height: 100vh;
+            font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+            color: var(--body-text-color, #fff);
+        }}
+    </style>
     <script type="module" src="http://localhost:5173/src/main.ts"></script>
 </head>
-<body>
+<body class="dark">
     <div id="app"></div>
 </body>
 </html>"""

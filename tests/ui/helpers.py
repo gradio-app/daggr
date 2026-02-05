@@ -34,10 +34,12 @@ class TestServer(uvicorn.Server):
         self.thread.join(timeout=5)
 
 
-def launch_daggr_server(graph: Graph, temp_db: str) -> tuple[TestServer, str]:
+def launch_daggr_server(
+    graph: Graph, temp_db: str, theme=None
+) -> tuple[TestServer, str]:
     os.environ["DAGGR_DB_PATH"] = temp_db
     port = find_available_port()
-    server = DaggrServer(graph)
+    server = DaggrServer(graph, theme=theme)
     config = uvicorn.Config(
         app=server.app,
         host="127.0.0.1",

@@ -41,8 +41,8 @@
 
 <style>
 	.gr-textbox-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		overflow: hidden;
 	}
@@ -51,7 +51,7 @@
 		display: block;
 		font-size: 10px;
 		font-weight: 400;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		padding: 6px 10px 0;
 	}
 
@@ -60,7 +60,7 @@
 		padding: 4px 10px 8px;
 		font-size: 11px;
 		font-family: inherit;
-		color: #e5e7eb;
+		color: var(--body-text-color);
 		background: transparent;
 		border: none;
 		outline: none;
@@ -68,11 +68,11 @@
 	}
 
 	.gr-input::placeholder {
-		color: #555;
+		color: var(--input-placeholder-color);
 	}
 
 	.gr-textbox-wrap:focus-within {
-		border-color: #f97316;
+		border-color: var(--color-accent);
 	}
 
 	.gr-input:disabled {

@@ -58,44 +58,47 @@
 	}
 
 	.primary {
-		background: #f97316;
-		color: white;
+		background: var(--color-accent);
+		color: var(--button-primary-text-color);
 	}
 
 	.primary:hover:not(:disabled) {
-		background: #ea580c;
+		background: var(--button-primary-background-fill-hover);
 	}
 
 	.primary:active:not(:disabled) {
-		background: #c2410c;
+		background: var(--button-primary-background-fill-hover);
+		filter: brightness(0.9);
 	}
 
 	.secondary {
-		background: #2a2a2a;
-		color: #e5e7eb;
-		border: 1px solid #3a3a3a;
+		background: var(--button-secondary-background-fill);
+		color: var(--button-secondary-text-color);
+		border: 1px solid var(--button-secondary-border-color);
 	}
 
 	.secondary:hover:not(:disabled) {
-		background: #333;
-		border-color: #444;
+		background: var(--button-secondary-background-fill-hover);
+		border-color: var(--button-secondary-border-color-hover);
 	}
 
 	.secondary:active:not(:disabled) {
-		background: #3a3a3a;
+		background: var(--button-secondary-background-fill-hover);
+		filter: brightness(0.9);
 	}
 
 	.stop {
-		background: #dc2626;
-		color: white;
+		background: var(--error-border-color);
+		color: var(--button-primary-text-color);
 	}
 
 	.stop:hover:not(:disabled) {
-		background: #b91c1c;
+		background: var(--error-text-color);
 	}
 
 	.stop:active:not(:disabled) {
-		background: #991b1b;
+		background: var(--error-text-color);
+		filter: brightness(0.9);
 	}
 </style>
 

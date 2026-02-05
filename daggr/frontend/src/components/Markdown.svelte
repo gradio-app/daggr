@@ -97,8 +97,8 @@
 
 <style>
 	.gr-markdown-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		overflow: hidden;
 	}
@@ -127,7 +127,7 @@
 	.gr-label {
 		font-size: 10px;
 		font-weight: 400;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		padding-left: 4px;
 	}
 
@@ -141,7 +141,7 @@
 		height: 20px;
 		padding: 3px;
 		border: none;
-		background: rgba(255, 255, 255, 0.08);
+		background: color-mix(in srgb, var(--body-text-color) 8%, transparent);
 		border-radius: 4px;
 		cursor: pointer;
 		display: flex;
@@ -153,43 +153,43 @@
 	.action-btn svg {
 		width: 12px;
 		height: 12px;
-		color: #888;
+		color: var(--body-text-color-subdued);
 	}
 
 	.action-btn:hover {
-		background: rgba(255, 255, 255, 0.15);
+		background: color-mix(in srgb, var(--body-text-color) 15%, transparent);
 	}
 
 	.action-btn:hover svg {
-		color: #fff;
+		color: var(--body-text-color);
 	}
 
 	.markdown-content {
 		padding: 10px;
 		font-size: 12px;
 		line-height: 1.6;
-		color: #e5e7eb;
+		color: var(--body-text-color);
 	}
 
 	.markdown-content :global(h1) {
 		font-size: 18px;
 		font-weight: 600;
 		margin: 0 0 12px 0;
-		color: #fff;
+		color: var(--body-text-color);
 	}
 
 	.markdown-content :global(h2) {
 		font-size: 15px;
 		font-weight: 600;
 		margin: 12px 0 8px 0;
-		color: #fff;
+		color: var(--body-text-color);
 	}
 
 	.markdown-content :global(h3) {
 		font-size: 13px;
 		font-weight: 600;
 		margin: 10px 0 6px 0;
-		color: #fff;
+		color: var(--body-text-color);
 	}
 
 	.markdown-content :global(p) {
@@ -202,7 +202,7 @@
 
 	.markdown-content :global(strong) {
 		font-weight: 600;
-		color: #fff;
+		color: var(--body-text-color);
 	}
 
 	.markdown-content :global(em) {
@@ -212,19 +212,19 @@
 	.markdown-content :global(code) {
 		font-family: 'SF Mono', Monaco, Consolas, monospace;
 		font-size: 11px;
-		background: #2a2a2a;
+		background: var(--input-background-fill);
 		padding: 2px 4px;
 		border-radius: 3px;
-		color: #f97316;
+		color: var(--color-accent);
 	}
 
 	.markdown-content :global(del) {
 		text-decoration: line-through;
-		color: #888;
+		color: var(--body-text-color-subdued);
 	}
 
 	.markdown-content :global(a) {
-		color: #60a5fa;
+		color: var(--secondary-400, #60a5fa);
 		text-decoration: none;
 	}
 
@@ -244,14 +244,14 @@
 	.markdown-content :global(blockquote) {
 		margin: 8px 0;
 		padding: 8px 12px;
-		border-left: 3px solid #f97316;
-		background: rgba(249, 115, 22, 0.1);
-		color: #ccc;
+		border-left: 3px solid var(--color-accent);
+		background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+		color: var(--body-text-color-subdued);
 	}
 
 	.markdown-content :global(hr) {
 		border: none;
-		border-top: 1px solid #333;
+		border-top: 1px solid var(--border-color-primary);
 		margin: 12px 0;
 	}
 </style>

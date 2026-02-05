@@ -63,8 +63,8 @@
 
 <style>
 	.item-list-section {
-		border-top: 1px solid rgba(34, 197, 94, 0.2);
-		background: rgba(34, 197, 94, 0.03);
+		border-top: 1px solid color-mix(in srgb, var(--primary-500, #22c55e) 20%, transparent);
+		background: color-mix(in srgb, var(--primary-500, #22c55e) 3%, transparent);
 	}
 
 	.item-list-header {
@@ -72,13 +72,13 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 6px 10px;
-		border-bottom: 1px solid rgba(34, 197, 94, 0.1);
+		border-bottom: 1px solid color-mix(in srgb, var(--primary-500, #22c55e) 10%, transparent);
 	}
 
 	.item-list-title {
 		font-size: 10px;
 		font-weight: 600;
-		color: #22c55e;
+		color: var(--primary-500, #22c55e);
 		text-transform: uppercase;
 		letter-spacing: 0.5px;
 	}
@@ -93,7 +93,7 @@
 		align-items: flex-start;
 		gap: 8px;
 		padding: 8px 10px;
-		border-bottom: 1px solid rgba(34, 197, 94, 0.08);
+		border-bottom: 1px solid color-mix(in srgb, var(--primary-500, #22c55e) 8%, transparent);
 	}
 
 	.item-list-item:last-child {
@@ -111,21 +111,21 @@
 		width: 100%;
 		padding: 6px 8px;
 		font-size: 11px;
-		background: rgba(34, 197, 94, 0.08);
-		border: 1px solid rgba(34, 197, 94, 0.2);
+		background: color-mix(in srgb, var(--primary-500, #22c55e) 8%, transparent);
+		border: 1px solid color-mix(in srgb, var(--primary-500, #22c55e) 20%, transparent);
 		border-radius: 4px;
-		color: #e5e5e5;
+		color: var(--body-text-color);
 		cursor: pointer;
 	}
 
 	.gr-select:focus {
 		outline: none;
-		border-color: rgba(34, 197, 94, 0.5);
+		border-color: color-mix(in srgb, var(--primary-500, #22c55e) 50%, transparent);
 	}
 
 	.gr-textbox-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		overflow: hidden;
 	}
@@ -139,7 +139,7 @@
 		padding: 6px 10px;
 		font-size: 11px;
 		font-family: inherit;
-		color: #e5e7eb;
+		color: var(--body-text-color);
 		background: transparent;
 		border: none;
 		outline: none;

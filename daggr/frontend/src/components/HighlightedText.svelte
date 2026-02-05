@@ -87,8 +87,8 @@
 
 <style>
 	.gr-highlightedtext-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		overflow: hidden;
 	}
@@ -100,7 +100,7 @@
 	.gr-label {
 		font-size: 10px;
 		font-weight: 400;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		padding-left: 4px;
 	}
 
@@ -125,14 +125,14 @@
 
 	.legend-text {
 		font-size: 10px;
-		color: #888;
+		color: var(--body-text-color-subdued);
 	}
 
 	.text-content {
 		padding: 0 10px 10px;
 		font-size: 12px;
 		line-height: 1.8;
-		color: #e5e7eb;
+		color: var(--body-text-color);
 	}
 
 	.plain-text {
@@ -159,7 +159,7 @@
 
 	.gr-empty {
 		font-size: 11px;
-		color: #555;
+		color: var(--input-placeholder-color);
 		font-style: italic;
 		padding: 6px 10px;
 		text-align: center;

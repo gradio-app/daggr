@@ -213,15 +213,15 @@
 
 <style>
 	.gr-file-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		overflow: hidden;
 		transition: border-color 0.15s;
 	}
 
 	.gr-file-wrap.dragging {
-		border-color: #f97316;
+		border-color: var(--color-accent);
 		border-style: dashed;
 	}
 
@@ -235,7 +235,7 @@
 	.gr-label {
 		font-size: 10px;
 		font-weight: 400;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		padding-left: 4px;
 	}
 
@@ -249,7 +249,7 @@
 		height: 20px;
 		padding: 3px;
 		border: none;
-		background: rgba(255, 255, 255, 0.08);
+		background: color-mix(in srgb, var(--body-text-color) 8%, transparent);
 		border-radius: 4px;
 		cursor: pointer;
 		display: flex;
@@ -261,15 +261,15 @@
 	.action-btn svg {
 		width: 12px;
 		height: 12px;
-		color: #888;
+		color: var(--body-text-color-subdued);
 	}
 
 	.action-btn:hover {
-		background: rgba(255, 255, 255, 0.15);
+		background: color-mix(in srgb, var(--body-text-color) 15%, transparent);
 	}
 
 	.action-btn:hover svg {
-		color: #fff;
+		color: var(--body-text-color);
 	}
 
 	.file-list {
@@ -284,14 +284,14 @@
 		align-items: center;
 		gap: 8px;
 		padding: 6px 8px;
-		background: #2a2a2a;
+		background: var(--input-background-fill);
 		border-radius: 4px;
 	}
 
 	.file-icon {
 		width: 24px;
 		height: 24px;
-		color: #666;
+		color: var(--neutral-500);
 		flex-shrink: 0;
 	}
 
@@ -308,7 +308,7 @@
 	.file-name {
 		display: block;
 		font-size: 11px;
-		color: #e5e7eb;
+		color: var(--body-text-color);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -316,7 +316,7 @@
 
 	.file-size {
 		font-size: 10px;
-		color: #666;
+		color: var(--neutral-500);
 	}
 
 	.file-item-actions {
@@ -341,15 +341,15 @@
 	.item-btn svg {
 		width: 12px;
 		height: 12px;
-		color: #666;
+		color: var(--neutral-500);
 	}
 
 	.item-btn:hover {
-		background: rgba(255, 255, 255, 0.1);
+		background: color-mix(in srgb, var(--body-text-color) 10%, transparent);
 	}
 
 	.item-btn:hover svg {
-		color: #fff;
+		color: var(--body-text-color);
 	}
 
 	.drop-zone {
@@ -359,7 +359,7 @@
 		justify-content: center;
 		gap: 8px;
 		padding: 20px;
-		color: #555;
+		color: var(--input-placeholder-color);
 		cursor: pointer;
 	}
 
@@ -373,12 +373,12 @@
 	}
 
 	.drop-zone:hover {
-		color: #888;
+		color: var(--body-text-color-subdued);
 	}
 
 	.gr-empty {
 		font-size: 11px;
-		color: #555;
+		color: var(--input-placeholder-color);
 		font-style: italic;
 		padding: 6px;
 		text-align: center;

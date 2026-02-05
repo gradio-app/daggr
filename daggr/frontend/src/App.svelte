@@ -987,14 +987,14 @@
 
 	function getBadgeStyle(type: string): string {
 		const colors: Record<string, string> = {
-			'FN': '#f97316',
-			'INPUT': '#06b6d4',
-			'MAP': '#a855f7',
-			'GRADIO': '#ea580c',
-			'MODEL': '#22c55e',
-			'CHOICE': '#8b5cf6',
+			'FN': 'var(--color-accent)',
+			'INPUT': 'var(--secondary-500, #06b6d4)',
+			'MAP': 'var(--primary-400, #a855f7)',
+			'GRADIO': 'var(--color-accent)',
+			'MODEL': 'var(--primary-500, #22c55e)',
+			'CHOICE': 'var(--primary-400, #8b5cf6)',
 		};
-		return `background: ${colors[type] || '#666'};`;
+		return `background: ${colors[type] || 'var(--neutral-500)'};`;
 	}
 
 	function getSelectedResults(node: GraphNode): GradioComponentData[] {
@@ -1150,12 +1150,6 @@
 	role="application"
 >
 	<div class="grid-bg"></div>
-
-	{#if !wsConnected}
-		<div class="connection-status">Connecting...</div>
-	{:else if !graphData}
-		<div class="connection-status">Loading graph...</div>
-	{/if}
 
 	<div 
 		class="canvas-transform"
@@ -1394,7 +1388,11 @@
 		{/if}
 	</div>
 
-	{#if hfUser}
+	{#if !wsConnected}
+		<div class="connection-status">Connecting...</div>
+	{:else if !graphData}
+		<div class="connection-status">Loading graph...</div>
+	{:else if hfUser}
 		<div class="hf-user">
 			{#if hfUser.avatar_url}
 				<img src={hfUser.avatar_url} alt="" class="hf-avatar" />
@@ -1449,7 +1447,7 @@
 		width: 100vw;
 		height: 100vh;
 		overflow: hidden;
-		background: #0c0c0c;
+		background: var(--body-background-fill);
 		cursor: grab;
 		font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 	}
@@ -1461,7 +1459,7 @@
 	.grid-bg {
 		position: absolute;
 		inset: 0;
-		background-image: radial-gradient(circle, rgba(249, 115, 22, 0.06) 1px, transparent 1px);
+		background-image: radial-gradient(circle, color-mix(in srgb, var(--color-accent) 6%, transparent) 1px, transparent 1px);
 		background-size: 20px 20px;
 		pointer-events: none;
 	}
@@ -1477,8 +1475,8 @@
 		position: fixed;
 		top: 16px;
 		right: 16px;
-		background: rgba(249, 115, 22, 0.9);
-		color: #000;
+		background: color-mix(in srgb, var(--color-accent) 90%, transparent);
+		color: var(--button-primary-text-color);
 		padding: 8px 16px;
 		border-radius: 8px;
 		font-size: 12px;
@@ -1491,8 +1489,8 @@
 		top: 16px;
 		left: 50%;
 		transform: translateX(-50%);
-		background: rgba(20, 20, 20, 0.9);
-		border: 1px solid rgba(249, 115, 22, 0.2);
+		background: color-mix(in srgb, var(--block-background-fill) 90%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
 		border-radius: 8px;
 		padding: 8px 20px;
 		z-index: 100;
@@ -1504,11 +1502,11 @@
 	.title {
 		font-size: 14px;
 		font-weight: 600;
-		color: #f97316;
+		color: var(--color-accent);
 	}
 
 	.title-separator {
-		color: rgba(249, 115, 22, 0.3);
+		color: color-mix(in srgb, var(--color-accent) 30%, transparent);
 		font-weight: 300;
 	}
 
@@ -1522,7 +1520,7 @@
 		gap: 6px;
 		background: transparent;
 		border: none;
-		color: #aaa;
+		color: var(--body-text-color-subdued);
 		font-size: 13px;
 		font-weight: 500;
 		cursor: pointer;
@@ -1532,8 +1530,8 @@
 	}
 
 	.sheet-current:hover {
-		background: rgba(249, 115, 22, 0.1);
-		color: #f97316;
+		background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+		color: var(--color-accent);
 	}
 
 	.sheet-name {
@@ -1544,10 +1542,10 @@
 	}
 
 	.sheet-name-input {
-		background: rgba(0, 0, 0, 0.3);
-		border: 1px solid rgba(249, 115, 22, 0.4);
+		background: color-mix(in srgb, var(--body-background-fill) 30%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
 		border-radius: 4px;
-		color: #fff;
+		color: var(--body-text-color);
 		font-size: 13px;
 		font-weight: 500;
 		padding: 4px 8px;
@@ -1556,7 +1554,7 @@
 	}
 
 	.sheet-name-input:focus {
-		border-color: #f97316;
+		border-color: var(--color-accent);
 	}
 
 	.dropdown-arrow {
@@ -1571,8 +1569,8 @@
 		left: 0;
 		margin-top: 8px;
 		min-width: 180px;
-		background: rgba(25, 25, 25, 0.98);
-		border: 1px solid rgba(249, 115, 22, 0.3);
+		background: color-mix(in srgb, var(--block-background-fill) 98%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
 		border-radius: 8px;
 		padding: 6px;
 		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
@@ -1586,14 +1584,14 @@
 	}
 
 	.sheet-option.active {
-		background: rgba(249, 115, 22, 0.15);
+		background: color-mix(in srgb, var(--color-accent) 15%, transparent);
 	}
 
 	.sheet-option-name {
 		flex: 1;
 		background: none;
 		border: none;
-		color: #ccc;
+		color: var(--body-text-color-subdued);
 		font-size: 12px;
 		padding: 8px 10px;
 		text-align: left;
@@ -1602,17 +1600,17 @@
 	}
 
 	.sheet-option-name:hover {
-		color: #fff;
+		color: var(--body-text-color);
 	}
 
 	.sheet-option.active .sheet-option-name {
-		color: #f97316;
+		color: var(--color-accent);
 	}
 
 	.sheet-delete {
 		background: none;
 		border: none;
-		color: #666;
+		color: var(--neutral-500);
 		font-size: 16px;
 		padding: 6px 10px;
 		cursor: pointer;
@@ -1620,15 +1618,15 @@
 	}
 
 	.sheet-delete:hover {
-		color: #ef4444;
+		color: var(--error-text-color);
 	}
 
 	.sheet-new {
 		width: 100%;
 		background: none;
 		border: none;
-		border-top: 1px solid rgba(249, 115, 22, 0.15);
-		color: #888;
+		border-top: 1px solid color-mix(in srgb, var(--color-accent) 15%, transparent);
+		color: var(--body-text-color-subdued);
 		font-size: 12px;
 		padding: 10px;
 		margin-top: 4px;
@@ -1637,8 +1635,8 @@
 	}
 
 	.sheet-new:hover {
-		color: #f97316;
-		background: rgba(249, 115, 22, 0.1);
+		color: var(--color-accent);
+		background: color-mix(in srgb, var(--color-accent) 10%, transparent);
 	}
 
 	.hf-user {
@@ -1648,8 +1646,8 @@
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		background: rgba(20, 20, 20, 0.9);
-		border: 1px solid rgba(249, 115, 22, 0.2);
+		background: color-mix(in srgb, var(--block-background-fill) 90%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
 		border-radius: 8px;
 		padding: 6px 12px;
 		z-index: 100;
@@ -1666,7 +1664,7 @@
 	.hf-username {
 		font-size: 13px;
 		font-weight: 500;
-		color: #ccc;
+		color: var(--body-text-color-subdued);
 	}
 
 	.hf-tooltip {
@@ -1675,13 +1673,13 @@
 		right: 0;
 		margin-top: 8px;
 		width: 280px;
-		background: rgba(30, 30, 30, 0.98);
-		border: 1px solid rgba(249, 115, 22, 0.3);
+		background: color-mix(in srgb, var(--block-background-fill) 98%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
 		border-radius: 8px;
 		padding: 12px;
 		font-size: 12px;
 		line-height: 1.5;
-		color: #aaa;
+		color: var(--body-text-color-subdued);
 		opacity: 0;
 		visibility: hidden;
 		transition: opacity 0.2s, visibility 0.2s;
@@ -1697,7 +1695,7 @@
 	.logout-btn {
 		background: transparent;
 		border: none;
-		color: #666;
+		color: var(--neutral-500);
 		font-size: 16px;
 		cursor: pointer;
 		padding: 0 4px;
@@ -1712,7 +1710,7 @@
 	}
 
 	.logout-btn:hover {
-		color: #f97316;
+		color: var(--color-accent);
 	}
 
 	.login-section {
@@ -1723,11 +1721,11 @@
 	}
 
 	.login-btn {
-		background: rgba(20, 20, 20, 0.9);
-		border: 1px solid rgba(249, 115, 22, 0.2);
+		background: color-mix(in srgb, var(--block-background-fill) 90%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
 		border-radius: 8px;
 		padding: 8px 12px;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
@@ -1737,8 +1735,8 @@
 	}
 
 	.login-btn:hover {
-		border-color: rgba(249, 115, 22, 0.4);
-		color: #f97316;
+		border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+		color: var(--color-accent);
 	}
 
 	.hf-logo-icon {
@@ -1751,8 +1749,8 @@
 		position: absolute;
 		top: calc(100% + 8px);
 		right: 0;
-		background: rgba(20, 20, 20, 0.98);
-		border: 1px solid rgba(249, 115, 22, 0.3);
+		background: color-mix(in srgb, var(--block-background-fill) 98%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
 		border-radius: 10px;
 		padding: 16px;
 		width: 280px;
@@ -1762,19 +1760,19 @@
 	.login-tooltip-header {
 		font-size: 14px;
 		font-weight: 600;
-		color: #f97316;
+		color: var(--color-accent);
 		margin-bottom: 8px;
 	}
 
 	.login-tooltip-desc {
 		font-size: 12px;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		margin: 0 0 12px 0;
 		line-height: 1.4;
 	}
 
 	.login-tooltip-desc a {
-		color: #f97316;
+		color: var(--color-accent);
 		text-decoration: none;
 	}
 
@@ -1783,21 +1781,21 @@
 	}
 
 	.login-tooltip-highlight {
-		background: rgba(249, 115, 22, 0.15);
-		border: 1px solid rgba(249, 115, 22, 0.3);
+		background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
 		border-radius: 6px;
 		padding: 8px 10px;
-		color: #f97316;
+		color: var(--color-accent);
 		font-weight: 500;
 	}
 
 	.login-token-input {
 		width: 100%;
 		padding: 10px 12px;
-		background: rgba(0, 0, 0, 0.3);
-		border: 1px solid rgba(249, 115, 22, 0.2);
+		background: var(--input-background-fill);
+		border: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
 		border-radius: 6px;
-		color: #fff;
+		color: var(--body-text-color);
 		font-size: 13px;
 		font-family: 'SF Mono', Monaco, monospace;
 		margin-bottom: 8px;
@@ -1806,26 +1804,26 @@
 
 	.login-token-input:focus {
 		outline: none;
-		border-color: rgba(249, 115, 22, 0.5);
+		border-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
 	}
 
 	.login-token-input::placeholder {
-		color: #555;
+		color: var(--input-placeholder-color);
 	}
 
 	.login-error {
 		font-size: 11px;
-		color: #ef4444;
+		color: var(--error-text-color);
 		margin-bottom: 8px;
 	}
 
 	.login-submit-btn {
 		width: 100%;
 		padding: 10px;
-		background: #f97316;
+		background: var(--color-accent);
 		border: none;
 		border-radius: 6px;
-		color: #000;
+		color: var(--button-primary-text-color);
 		font-size: 13px;
 		font-weight: 600;
 		cursor: pointer;
@@ -1833,7 +1831,7 @@
 	}
 
 	.login-submit-btn:hover:not(:disabled) {
-		background: #fb923c;
+		background: var(--color-accent-soft);
 	}
 
 	.login-submit-btn:disabled {
@@ -1848,8 +1846,8 @@
 		display: flex;
 		align-items: center;
 		gap: 4px;
-		background: rgba(20, 20, 20, 0.9);
-		border: 1px solid rgba(249, 115, 22, 0.2);
+		background: color-mix(in srgb, var(--block-background-fill) 90%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
 		border-radius: 8px;
 		padding: 4px;
 		z-index: 100;
@@ -1867,7 +1865,7 @@
 		height: 28px;
 		border: none;
 		background: transparent;
-		color: #999;
+		color: var(--body-text-color-subdued);
 		font-size: 16px;
 		font-weight: 600;
 		cursor: pointer;
@@ -1879,14 +1877,14 @@
 	}
 
 	.zoom-btn:hover {
-		background: rgba(249, 115, 22, 0.15);
-		color: #f97316;
+		background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+		color: var(--color-accent);
 	}
 
 	.fit-btn {
 		font-size: 14px;
 		margin-left: 4px;
-		border-left: 1px solid rgba(249, 115, 22, 0.15);
+		border-left: 1px solid color-mix(in srgb, var(--color-accent) 15%, transparent);
 		padding-left: 8px;
 		border-radius: 0 4px 4px 0;
 	}
@@ -1894,7 +1892,7 @@
 	.zoom-level {
 		font-size: 11px;
 		font-weight: 600;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		min-width: 40px;
 		text-align: center;
 		font-family: 'SF Mono', Monaco, monospace;
@@ -1912,14 +1910,14 @@
 
 	.edge-path {
 		fill: none;
-		stroke: #f97316;
+		stroke: var(--color-accent);
 		stroke-width: 2.5;
 		stroke-linecap: round;
 		transition: stroke 0.2s ease;
 	}
 
 	.edge-path.stale {
-		stroke: #6b7280;
+		stroke: var(--neutral-500);
 	}
 
 	.edge-fork {
@@ -1928,8 +1926,8 @@
 
 	.node {
 		position: absolute;
-		background: linear-gradient(175deg, rgba(24, 24, 24, 0.92) 0%, rgba(18, 18, 18, 0.92) 100%);
-		border: 1px solid rgba(249, 115, 22, 0.2);
+		background: linear-gradient(175deg, color-mix(in srgb, var(--block-background-fill) 92%, transparent) 0%, color-mix(in srgb, var(--block-background-fill) 92%, black 8%) 100%);
+		border: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
 		border-radius: 10px;
 		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 		overflow: visible;
@@ -1942,16 +1940,16 @@
 		right: 4px;
 		font-size: 10px;
 		font-weight: 500;
-		color: #666;
+		color: var(--neutral-500);
 		font-family: 'SF Mono', Monaco, monospace;
 	}
 
 	.exec-time.running {
-		color: #f97316;
+		color: var(--color-accent);
 	}
 
 	.exec-time.error {
-		color: #ef4444;
+		color: var(--error-text-color);
 		font-weight: 600;
 	}
 
@@ -1961,8 +1959,8 @@
 		gap: 8px;
 		padding: 0 12px;
 		height: 36px;
-		background: rgba(249, 115, 22, 0.06);
-		border-bottom: 1px solid rgba(249, 115, 22, 0.1);
+		background: color-mix(in srgb, var(--color-accent) 6%, transparent);
+		border-bottom: 1px solid color-mix(in srgb, var(--color-accent) 10%, transparent);
 	}
 
 	.type-badge {
@@ -1972,7 +1970,7 @@
 		letter-spacing: 0.5px;
 		padding: 3px 8px;
 		border-radius: 4px;
-		color: #fff;
+		color: var(--button-primary-text-color);
 		flex-shrink: 0;
 	}
 
@@ -1980,7 +1978,7 @@
 		flex: 1;
 		font-size: 11px;
 		font-weight: 600;
-		color: #eee;
+		color: var(--body-text-color);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -1992,25 +1990,25 @@
 	}
 
 	.node-link:hover {
-		color: #f97316;
+		color: var(--color-accent);
 		text-decoration: underline;
 	}
 
 	.run-btn {
 		position: relative;
 		font-size: 10px;
-		color: #f97316;
+		color: var(--color-accent);
 		cursor: pointer;
 		padding: 2px 6px;
 		border-radius: 4px;
-		border: 1px solid #f97316;
+		border: 1px solid var(--color-accent);
 		background: transparent;
 		user-select: none;
 		transition: all 0.15s;
 	}
 
 	.run-btn:hover {
-		background: rgba(249, 115, 22, 0.2);
+		background: color-mix(in srgb, var(--color-accent) 20%, transparent);
 	}
 
 	.run-btn.running {
@@ -2029,8 +2027,8 @@
 	}
 
 	@keyframes pulse {
-		0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); }
-		50% { box-shadow: 0 0 0 4px rgba(249, 115, 22, 0); }
+		0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 40%, transparent); }
+		50% { box-shadow: 0 0 0 4px transparent; }
 	}
 
 	.run-badge {
@@ -2039,8 +2037,8 @@
 		right: -6px;
 		min-width: 14px;
 		height: 14px;
-		background: #f97316;
-		color: #000;
+		background: var(--color-accent);
+		color: var(--button-primary-text-color);
 		font-size: 9px;
 		font-weight: 700;
 		border-radius: 7px;
@@ -2088,19 +2086,19 @@
 	}
 
 	.port-dot.input {
-		background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-		box-shadow: 0 0 6px rgba(249, 115, 22, 0.5);
+		background: linear-gradient(135deg, var(--color-accent) 0%, color-mix(in srgb, var(--color-accent) 80%, black) 100%);
+		box-shadow: 0 0 6px color-mix(in srgb, var(--color-accent) 50%, transparent);
 	}
 
 	.port-dot.output {
-		background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
-		box-shadow: 0 0 6px rgba(251, 146, 60, 0.5);
+		background: linear-gradient(135deg, var(--color-accent-soft) 0%, var(--color-accent) 100%);
+		box-shadow: 0 0 6px color-mix(in srgb, var(--color-accent-soft) 50%, transparent);
 	}
 
 	.port-label {
 		font-size: 10px;
 		font-weight: 500;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		font-family: 'SF Mono', Monaco, monospace;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -2110,8 +2108,8 @@
 
 	.node-error {
 		padding: 8px 10px;
-		border-top: 1px solid rgba(239, 68, 68, 0.2);
-		background: rgba(239, 68, 68, 0.05);
+		border-top: 1px solid color-mix(in srgb, var(--error-border-color) 20%, transparent);
+		background: color-mix(in srgb, var(--error-background-fill) 5%, transparent);
 		max-height: 200px;
 		overflow-y: auto;
 	}
@@ -2119,7 +2117,7 @@
 	.node-error-label {
 		font-size: 10px;
 		font-weight: 600;
-		color: #ef4444;
+		color: var(--error-text-color);
 		text-transform: uppercase;
 		letter-spacing: 0.5px;
 		margin-bottom: 4px;
@@ -2127,7 +2125,7 @@
 
 	.node-error-message {
 		font-size: 11px;
-		color: #b91c1c;
+		color: var(--error-border-color);
 		font-family: 'SF Mono', Monaco, monospace;
 		white-space: pre-wrap;
 		word-break: break-word;
@@ -2136,19 +2134,19 @@
 
 	.embedded-components {
 		padding: 8px 10px;
-		border-top: 1px solid rgba(249, 115, 22, 0.08);
+		border-top: 1px solid color-mix(in srgb, var(--color-accent) 8%, transparent);
 		max-height: 200px;
 		overflow-y: auto;
 	}
 
 	.variants-accordion {
-		border-top: 1px solid rgba(249, 115, 22, 0.08);
+		border-top: 1px solid color-mix(in srgb, var(--color-accent) 8%, transparent);
 		max-height: 350px;
 		overflow-y: auto;
 	}
 
 	.variant-card {
-		border-bottom: 1px solid rgba(249, 115, 22, 0.08);
+		border-bottom: 1px solid color-mix(in srgb, var(--color-accent) 8%, transparent);
 		cursor: pointer;
 		transition: background 0.15s;
 	}
@@ -2158,11 +2156,11 @@
 	}
 
 	.variant-card:hover {
-		background: rgba(249, 115, 22, 0.03);
+		background: color-mix(in srgb, var(--color-accent) 3%, transparent);
 	}
 
 	.variant-card.selected {
-		background: rgba(249, 115, 22, 0.06);
+		background: color-mix(in srgb, var(--color-accent) 6%, transparent);
 	}
 
 	.variant-header {
@@ -2174,7 +2172,7 @@
 
 	.variant-radio {
 		font-size: 12px;
-		color: #f97316;
+		color: var(--color-accent);
 		width: 14px;
 		flex-shrink: 0;
 	}
@@ -2186,14 +2184,14 @@
 	.variant-name {
 		font-size: 11px;
 		font-weight: 500;
-		color: #aaa;
+		color: var(--body-text-color-subdued);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 
 	.variant-card.selected .variant-name {
-		color: #f97316;
+		color: var(--color-accent);
 	}
 
 	.variant-inputs {
@@ -2206,16 +2204,16 @@
 		justify-content: center;
 		gap: 8px;
 		padding: 6px 10px;
-		background: rgba(249, 115, 22, 0.05);
-		border-top: 1px solid rgba(249, 115, 22, 0.1);
+		background: color-mix(in srgb, var(--color-accent) 5%, transparent);
+		border-top: 1px solid color-mix(in srgb, var(--color-accent) 10%, transparent);
 	}
 
 	.result-nav {
 		width: 20px;
 		height: 20px;
 		border: none;
-		background: rgba(249, 115, 22, 0.1);
-		color: #f97316;
+		background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+		color: var(--color-accent);
 		font-size: 14px;
 		font-weight: 600;
 		border-radius: 4px;
@@ -2227,7 +2225,7 @@
 	}
 
 	.result-nav:hover:not(:disabled) {
-		background: rgba(249, 115, 22, 0.25);
+		background: color-mix(in srgb, var(--color-accent) 25%, transparent);
 	}
 
 	.result-nav:disabled {
@@ -2238,7 +2236,7 @@
 	.result-counter {
 		font-size: 11px;
 		font-weight: 600;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		font-family: 'SF Mono', Monaco, monospace;
 		min-width: 32px;
 		text-align: center;

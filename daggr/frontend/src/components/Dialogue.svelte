@@ -205,8 +205,8 @@
 
 <style>
 	.gr-dialogue-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		overflow: hidden;
 	}
@@ -228,7 +228,7 @@
 	.gr-label {
 		font-size: 10px;
 		font-weight: 400;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		padding-left: 4px;
 	}
 
@@ -242,7 +242,7 @@
 		height: 20px;
 		padding: 3px;
 		border: none;
-		background: rgba(255, 255, 255, 0.08);
+		background: color-mix(in srgb, var(--body-text-color) 8%, transparent);
 		border-radius: 4px;
 		cursor: pointer;
 		display: flex;
@@ -254,19 +254,19 @@
 	.action-btn svg {
 		width: 12px;
 		height: 12px;
-		color: #888;
+		color: var(--body-text-color-subdued);
 	}
 
 	.action-btn:hover {
-		background: rgba(255, 255, 255, 0.15);
+		background: color-mix(in srgb, var(--body-text-color) 15%, transparent);
 	}
 
 	.action-btn:hover svg {
-		color: #fff;
+		color: var(--body-text-color);
 	}
 
 	.action-btn.success svg {
-		color: #22c55e;
+		color: var(--primary-500, #22c55e);
 	}
 
 	.dialogue-container {
@@ -308,7 +308,7 @@
 		padding: 2px 4px;
 		font-size: 10px;
 		font-weight: 600;
-		color: #fff;
+		color: var(--button-primary-text-color);
 		background: transparent;
 		border: none;
 		border-radius: 3px;
@@ -326,14 +326,14 @@
 	}
 
 	.speaker-select option {
-		background: #2a2a2a;
-		color: #e5e7eb;
+		background: var(--input-background-fill);
+		color: var(--body-text-color);
 	}
 
 	.speaker-name {
 		font-size: 10px;
 		font-weight: 600;
-		color: #fff;
+		color: var(--button-primary-text-color);
 	}
 
 	.text-wrapper {
@@ -347,7 +347,7 @@
 		width: 100%;
 		padding: 2px 6px;
 		font-size: 11px;
-		color: #e5e7eb;
+		color: var(--body-text-color);
 		background: transparent;
 		border: none;
 		border-radius: 3px;
@@ -371,7 +371,7 @@
 
 	.text-content {
 		font-size: 11px;
-		color: #e5e7eb;
+		color: var(--body-text-color);
 		line-height: 1.4;
 		white-space: pre-wrap;
 		word-break: break-word;
@@ -396,7 +396,7 @@
 	.remove-btn svg {
 		width: 10px;
 		height: 10px;
-		color: #fff;
+		color: var(--button-primary-text-color);
 	}
 
 	.remove-btn:hover {
@@ -404,12 +404,12 @@
 	}
 
 	.remove-btn:hover svg {
-		color: #ef4444;
+		color: var(--error-text-color);
 	}
 
 	.gr-empty {
 		font-size: 11px;
-		color: #555;
+		color: var(--input-placeholder-color);
 		font-style: italic;
 		padding: 6px;
 		text-align: center;

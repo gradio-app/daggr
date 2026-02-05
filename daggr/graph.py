@@ -7,6 +7,7 @@ executed to process data through a pipeline.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import networkx as nx
 
@@ -14,6 +15,9 @@ from daggr._utils import suggest_similar
 from daggr.edge import Edge
 from daggr.node import Node
 from daggr.port import Port
+
+if TYPE_CHECKING:
+    from gradio.themes import ThemeClass as Theme
 
 
 class Graph:
@@ -206,6 +210,7 @@ class Graph:
         port: int | None = None,
         share: bool | None = None,
         open_browser: bool = True,
+        theme: Theme | str | None = None,
         **kwargs,
     ):
         """Launch the graph as an interactive web application.
@@ -223,6 +228,10 @@ class Graph:
                 Colab/Kaggle environments, False otherwise.
             open_browser: If True, automatically open the app in the default
                 web browser. Defaults to True.
+            theme: A Gradio theme to use for styling. Can be a Gradio `Theme` instance,
+                a string name like "default", "soft", "monochrome", "glass",
+                or a Hub theme like "gradio/seafoam". Defaults to the Gradio
+                default theme.
             **kwargs: Additional arguments passed to uvicorn.
         """
         import os
@@ -235,7 +244,7 @@ class Graph:
             port = int(os.environ.get("GRADIO_SERVER_PORT", "7860"))
 
         self._prepare_local_nodes()
-        server = DaggrServer(self)
+        server = DaggrServer(self, theme=theme)
         server.run(
             host=host, port=port, share=share, open_browser=open_browser, **kwargs
         )

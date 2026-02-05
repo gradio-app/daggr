@@ -137,8 +137,8 @@
 
 <style>
 	.gr-dropdown-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		overflow: visible;
 	}
@@ -147,7 +147,7 @@
 		display: block;
 		font-size: 10px;
 		font-weight: 400;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		padding: 6px 10px 0;
 	}
 
@@ -159,14 +159,14 @@
 	.input-wrap {
 		display: flex;
 		align-items: center;
-		background: #2a2a2a;
-		border: 1px solid #3a3a3a;
+		background: var(--input-background-fill);
+		border: 1px solid var(--input-border-color);
 		border-radius: 4px;
 		transition: border-color 0.15s;
 	}
 
 	.input-wrap:focus-within {
-		border-color: #f97316;
+		border-color: var(--color-accent);
 	}
 
 	.dropdown-input {
@@ -175,13 +175,13 @@
 		border: none;
 		padding: 6px 8px;
 		font-size: 11px;
-		color: #e5e7eb;
+		color: var(--body-text-color);
 		outline: none;
 		min-width: 0;
 	}
 
 	.dropdown-input::placeholder {
-		color: #666;
+		color: var(--input-placeholder-color);
 	}
 
 	.dropdown-input:disabled {
@@ -196,7 +196,7 @@
 		background: transparent;
 		border: none;
 		cursor: pointer;
-		color: #666;
+		color: var(--neutral-500);
 		transition: transform 0.15s;
 		flex-shrink: 0;
 	}
@@ -216,8 +216,8 @@
 
 	.options-portal {
 		position: fixed;
-		background: #2a2a2a;
-		border: 1px solid #444;
+		background: var(--background-fill-secondary);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 4px;
 		max-height: 150px;
 		overflow-y: auto;
@@ -233,17 +233,17 @@
 		background: transparent;
 		border: none;
 		font-size: 11px;
-		color: #e5e7eb;
+		color: var(--body-text-color);
 		cursor: pointer;
 		transition: background 0.1s;
 	}
 
 	.option:hover {
-		background: #333;
+		background: var(--background-fill-primary);
 	}
 
 	.option.selected {
-		background: rgba(249, 115, 22, 0.2);
-		color: #f97316;
+		background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+		color: var(--color-accent);
 	}
 </style>

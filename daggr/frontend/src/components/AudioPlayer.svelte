@@ -97,7 +97,7 @@
 		align-items: center;
 		gap: 8px;
 		padding: 8px 10px;
-		background: linear-gradient(135deg, #1e1e1e 0%, #171717 100%);
+		background: linear-gradient(135deg, var(--block-background-fill) 0%, color-mix(in srgb, var(--block-background-fill) 90%, black) 100%);
 	}
 
 	.audio-player.compact {
@@ -110,8 +110,8 @@
 		width: 28px;
 		height: 28px;
 		border: none;
-		background: #f97316;
-		color: #000;
+		background: var(--color-accent);
+		color: var(--button-primary-text-color);
 		border-radius: 50%;
 		cursor: pointer;
 		display: flex;
@@ -122,7 +122,7 @@
 	}
 
 	.play-btn:hover {
-		background: #fb923c;
+		background: var(--color-accent-soft);
 		transform: scale(1.05);
 	}
 
@@ -144,7 +144,7 @@
 	.progress {
 		flex: 1;
 		height: 6px;
-		background: #333;
+		background: var(--border-color-primary);
 		border-radius: 3px;
 		cursor: pointer;
 		position: relative;
@@ -157,7 +157,7 @@
 
 	.progress-fill {
 		height: 100%;
-		background: linear-gradient(90deg, #f97316 0%, #fb923c 100%);
+		background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-soft) 100%);
 		border-radius: 3px;
 		transition: width 0.1s linear;
 	}
@@ -165,7 +165,7 @@
 	.time {
 		font-size: 10px;
 		font-family: 'SF Mono', Monaco, monospace;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		min-width: 70px;
 		text-align: right;
 		flex-shrink: 0;

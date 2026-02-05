@@ -29,8 +29,8 @@
 
 <style>
 	.gr-checkbox-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		padding: 8px 10px;
 	}
@@ -59,8 +59,8 @@
 	.checkmark {
 		width: 14px;
 		height: 14px;
-		background: #2a2a2a;
-		border: 1px solid #444;
+		background: var(--checkbox-background-color);
+		border: 1px solid var(--checkbox-border-color);
 		border-radius: 3px;
 		display: flex;
 		align-items: center;
@@ -70,12 +70,12 @@
 	}
 
 	.checkbox-container:hover .checkmark {
-		border-color: #555;
+		border-color: var(--checkbox-border-color-hover);
 	}
 
 	.checkbox-container input:checked ~ .checkmark {
-		background: #f97316;
-		border-color: #f97316;
+		background: var(--color-accent);
+		border-color: var(--color-accent);
 	}
 
 	.checkmark::after {
@@ -83,7 +83,7 @@
 		display: none;
 		width: 4px;
 		height: 7px;
-		border: solid white;
+		border: solid var(--button-primary-text-color);
 		border-width: 0 2px 2px 0;
 		transform: rotate(45deg);
 		margin-bottom: 2px;
@@ -94,17 +94,17 @@
 	}
 
 	.checkbox-container:focus-within .checkmark {
-		border-color: #f97316;
-		box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
+		border-color: var(--color-accent);
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 20%, transparent);
 	}
 
 	.gr-label {
 		font-size: 11px;
-		color: #e5e7eb;
+		color: var(--body-text-color);
 	}
 
 	.checkbox-container.disabled .gr-label {
-		color: #666;
+		color: var(--neutral-500);
 	}
 </style>
 

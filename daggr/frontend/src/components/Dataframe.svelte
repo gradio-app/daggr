@@ -148,8 +148,8 @@
 
 <style>
 	.gr-dataframe-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		overflow: hidden;
 	}
@@ -189,7 +189,7 @@
 	.gr-label {
 		font-size: 10px;
 		font-weight: 400;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		padding-left: 4px;
 	}
 
@@ -203,7 +203,7 @@
 		height: 20px;
 		padding: 3px;
 		border: none;
-		background: rgba(255, 255, 255, 0.08);
+		background: color-mix(in srgb, var(--body-text-color) 8%, transparent);
 		border-radius: 4px;
 		cursor: pointer;
 		display: flex;
@@ -215,15 +215,15 @@
 	.action-btn svg {
 		width: 12px;
 		height: 12px;
-		color: #888;
+		color: var(--body-text-color-subdued);
 	}
 
 	.action-btn:hover {
-		background: rgba(255, 255, 255, 0.15);
+		background: color-mix(in srgb, var(--body-text-color) 15%, transparent);
 	}
 
 	.action-btn:hover svg {
-		color: #fff;
+		color: var(--body-text-color);
 	}
 
 	.table-container {
@@ -249,12 +249,12 @@
 	th, td {
 		padding: 4px 8px;
 		text-align: left;
-		border-bottom: 1px solid #2a2a2a;
+		border-bottom: 1px solid var(--input-background-fill);
 	}
 
 	th {
-		background: #222;
-		color: #888;
+		background: var(--background-fill-secondary);
+		color: var(--body-text-color-subdued);
 		font-weight: 500;
 		font-size: 10px;
 		position: sticky;
@@ -263,7 +263,7 @@
 	}
 
 	td {
-		color: #e5e7eb;
+		color: var(--body-text-color);
 	}
 
 	td.editable {
@@ -271,18 +271,18 @@
 	}
 
 	td.editable:hover {
-		background: rgba(255, 255, 255, 0.05);
+		background: color-mix(in srgb, var(--body-text-color) 5%, transparent);
 	}
 
 	.row-num {
-		color: #555;
+		color: var(--input-placeholder-color);
 		width: 40px;
 		text-align: center;
 		font-size: 10px;
 	}
 
 	tbody tr:hover {
-		background: rgba(255, 255, 255, 0.02);
+		background: color-mix(in srgb, var(--body-text-color) 2%, transparent);
 	}
 
 	.cell-content {
@@ -296,9 +296,9 @@
 		width: 100%;
 		padding: 2px 4px;
 		font-size: 11px;
-		color: #e5e7eb;
-		background: #333;
-		border: 1px solid #f97316;
+		color: var(--body-text-color);
+		background: var(--background-fill-secondary);
+		border: 1px solid var(--color-accent);
 		border-radius: 2px;
 		outline: none;
 	}
@@ -306,13 +306,13 @@
 	.table-footer {
 		padding: 4px 10px;
 		font-size: 10px;
-		color: #555;
-		border-top: 1px solid #2a2a2a;
+		color: var(--input-placeholder-color);
+		border-top: 1px solid var(--input-background-fill);
 	}
 
 	.gr-empty {
 		font-size: 11px;
-		color: #555;
+		color: var(--input-placeholder-color);
 		font-style: italic;
 		padding: 6px;
 		text-align: center;

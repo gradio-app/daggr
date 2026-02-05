@@ -173,8 +173,8 @@
 
 <style>
 	.gr-imageslider-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		overflow: hidden;
 	}
@@ -189,7 +189,7 @@
 	.gr-label {
 		font-size: 10px;
 		font-weight: 400;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		padding-left: 4px;
 	}
 
@@ -203,7 +203,7 @@
 		height: 20px;
 		padding: 3px;
 		border: none;
-		background: rgba(255, 255, 255, 0.08);
+		background: color-mix(in srgb, var(--body-text-color) 8%, transparent);
 		border-radius: 4px;
 		cursor: pointer;
 		display: flex;
@@ -215,15 +215,15 @@
 	.action-btn svg {
 		width: 12px;
 		height: 12px;
-		color: #888;
+		color: var(--body-text-color-subdued);
 	}
 
 	.action-btn:hover {
-		background: rgba(255, 255, 255, 0.15);
+		background: color-mix(in srgb, var(--body-text-color) 15%, transparent);
 	}
 
 	.action-btn:hover svg {
-		color: #fff;
+		color: var(--body-text-color);
 	}
 
 	.slider-container {
@@ -233,7 +233,7 @@
 		overflow: hidden;
 		cursor: ew-resize;
 		aspect-ratio: 16/9;
-		background: #000;
+		background: var(--body-background-fill);
 	}
 
 	.image-layer {
@@ -264,10 +264,10 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: #555;
+		color: var(--input-placeholder-color);
 		font-size: 11px;
 		font-style: italic;
-		background: #1e1e1e;
+		background: var(--block-background-fill);
 	}
 
 	.slider-line {
@@ -287,7 +287,7 @@
 		transform: translate(-50%, -50%);
 		width: 32px;
 		height: 32px;
-		background: #1a1a1a;
+		background: var(--block-background-fill);
 		border: 2px solid;
 		border-radius: 50%;
 		display: flex;
@@ -299,7 +299,7 @@
 	.slider-handle svg {
 		width: 12px;
 		height: 12px;
-		color: #888;
+		color: var(--body-text-color-subdued);
 	}
 
 	.labels {
@@ -323,7 +323,7 @@
 
 	.gr-empty {
 		font-size: 11px;
-		color: #555;
+		color: var(--input-placeholder-color);
 		font-style: italic;
 		padding: 6px;
 		text-align: center;

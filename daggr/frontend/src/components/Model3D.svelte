@@ -225,8 +225,8 @@
 
 <style>
 	.gr-model3d-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		overflow: hidden;
 		display: flex;
@@ -250,7 +250,7 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 6px 10px;
-		border-bottom: 1px solid #333;
+		border-bottom: 1px solid var(--border-color-primary);
 	}
 
 	.gr-model3d-wrap.fullscreen .gr-header {
@@ -260,7 +260,7 @@
 	.gr-label {
 		font-size: 10px;
 		font-weight: 400;
-		color: #888;
+		color: var(--body-text-color-subdued);
 	}
 
 	.gr-model3d-wrap.fullscreen .gr-label {
@@ -281,7 +281,7 @@
 		height: 20px;
 		padding: 3px;
 		border: none;
-		background: rgba(255, 255, 255, 0.08);
+		background: color-mix(in srgb, var(--body-text-color) 8%, transparent);
 		border-radius: 4px;
 		cursor: pointer;
 		display: flex;
@@ -299,7 +299,7 @@
 	.action-btn svg {
 		width: 12px;
 		height: 12px;
-		color: #888;
+		color: var(--body-text-color-subdued);
 	}
 
 	.gr-model3d-wrap.fullscreen .action-btn svg {
@@ -308,18 +308,18 @@
 	}
 
 	.action-btn:hover {
-		background: rgba(249, 115, 22, 0.3);
+		background: color-mix(in srgb, var(--color-accent) 30%, transparent);
 	}
 
 	.action-btn:hover svg {
-		color: #f97316;
+		color: var(--color-accent);
 	}
 
 	.canvas-container {
 		position: relative;
 		width: 100%;
 		height: 200px;
-		background: #0d0d0d;
+		background: var(--body-background-fill);
 	}
 
 	.gr-model3d-wrap.fullscreen .canvas-container {
@@ -350,8 +350,8 @@
 		align-items: center;
 		justify-content: center;
 		gap: 10px;
-		background: rgba(13, 13, 13, 0.9);
-		color: #888;
+		background: color-mix(in srgb, var(--body-background-fill) 90%, transparent);
+		color: var(--body-text-color-subdued);
 		font-size: 11px;
 		z-index: 10;
 	}
@@ -365,8 +365,8 @@
 	.spinner {
 		width: 24px;
 		height: 24px;
-		border: 2px solid #333;
-		border-top-color: #f97316;
+		border: 2px solid var(--border-color-primary);
+		border-top-color: var(--color-accent);
 		border-radius: 50%;
 		animation: spin 1s linear infinite;
 	}
@@ -390,7 +390,7 @@
 	}
 
 	.error-text {
-		color: #ef4444;
+		color: var(--error-text-color);
 		text-align: center;
 		padding: 0 10px;
 	}
@@ -398,9 +398,9 @@
 	.retry-btn {
 		margin-top: 5px;
 		padding: 4px 12px;
-		border: 1px solid #f97316;
+		border: 1px solid var(--color-accent);
 		background: transparent;
-		color: #f97316;
+		color: var(--color-accent);
 		border-radius: 4px;
 		font-size: 10px;
 		cursor: pointer;
@@ -413,7 +413,7 @@
 	}
 
 	.retry-btn:hover {
-		background: rgba(249, 115, 22, 0.2);
+		background: color-mix(in srgb, var(--color-accent) 20%, transparent);
 	}
 
 	.model-footer {
@@ -421,7 +421,7 @@
 		align-items: center;
 		gap: 8px;
 		padding: 8px 10px;
-		background: #2a2a2a;
+		background: var(--input-background-fill);
 	}
 
 	.gr-model3d-wrap.fullscreen .model-footer {
@@ -431,7 +431,7 @@
 	.model-icon {
 		width: 18px;
 		height: 18px;
-		color: #f97316;
+		color: var(--color-accent);
 		flex-shrink: 0;
 	}
 
@@ -442,7 +442,7 @@
 
 	.model-name {
 		font-size: 10px;
-		color: #9ca3af;
+		color: var(--body-text-color-subdued);
 		word-break: break-all;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -455,7 +455,7 @@
 
 	.gr-empty {
 		font-size: 11px;
-		color: #555;
+		color: var(--input-placeholder-color);
 		font-style: italic;
 		padding: 20px;
 		text-align: center;

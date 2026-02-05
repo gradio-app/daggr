@@ -58,8 +58,8 @@
 
 <style>
 	.gr-colorpicker-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		overflow: hidden;
 	}
@@ -68,7 +68,7 @@
 		display: block;
 		font-size: 10px;
 		font-weight: 400;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		padding: 6px 10px 0;
 	}
 
@@ -90,7 +90,7 @@
 	.color-preview {
 		width: 28px;
 		height: 28px;
-		border: 2px solid #3a3a3a;
+		border: 2px solid var(--input-border-color);
 		border-radius: 4px;
 		cursor: pointer;
 		transition: border-color 0.15s;
@@ -98,7 +98,7 @@
 	}
 
 	.color-preview:hover:not(:disabled) {
-		border-color: #555;
+		border-color: var(--border-color-primary);
 	}
 
 	.color-preview:disabled {
@@ -112,15 +112,15 @@
 		padding: 6px 8px;
 		font-size: 11px;
 		font-family: 'SF Mono', Monaco, monospace;
-		color: #e5e7eb;
-		background: #2a2a2a;
-		border: 1px solid #3a3a3a;
+		color: var(--body-text-color);
+		background: var(--input-background-fill);
+		border: 1px solid var(--input-border-color);
 		border-radius: 4px;
 		outline: none;
 	}
 
 	.hex-input:focus {
-		border-color: #f97316;
+		border-color: var(--color-accent);
 	}
 
 	.hex-input:disabled {

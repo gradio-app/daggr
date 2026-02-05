@@ -142,8 +142,8 @@
 
 <style>
 	.gr-gallery-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		overflow: hidden;
 	}
@@ -158,13 +158,13 @@
 	.gr-label {
 		font-size: 10px;
 		font-weight: 400;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		padding-left: 4px;
 	}
 
 	.item-count {
 		font-size: 10px;
-		color: #555;
+		color: var(--input-placeholder-color);
 	}
 
 	.gallery-grid {
@@ -177,7 +177,7 @@
 	.gallery-item {
 		position: relative;
 		aspect-ratio: 1;
-		background: #222;
+		background: var(--background-fill-secondary);
 		border: 2px solid transparent;
 		border-radius: 4px;
 		overflow: hidden;
@@ -187,11 +187,11 @@
 	}
 
 	.gallery-item:hover {
-		border-color: #444;
+		border-color: var(--border-color-primary);
 	}
 
 	.gallery-item.selected {
-		border-color: #f97316;
+		border-color: var(--color-accent);
 	}
 
 	.gallery-item img,
@@ -236,7 +236,7 @@
 
 	.gr-empty {
 		font-size: 11px;
-		color: #555;
+		color: var(--input-placeholder-color);
 		font-style: italic;
 		padding: 6px;
 		text-align: center;
@@ -334,7 +334,7 @@
 	.preview-caption {
 		margin-top: 12px;
 		font-size: 13px;
-		color: #ccc;
+		color: var(--body-text-color-subdued);
 		text-align: center;
 	}
 
@@ -342,7 +342,7 @@
 		position: absolute;
 		bottom: -30px;
 		font-size: 12px;
-		color: #666;
+		color: var(--neutral-500);
 	}
 </style>
 

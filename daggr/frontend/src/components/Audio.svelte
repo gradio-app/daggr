@@ -193,8 +193,8 @@
 
 <style>
 	.gr-audio-wrap {
-		background: #1a1a1a;
-		border: 1px solid #333;
+		background: var(--block-background-fill);
+		border: 1px solid var(--border-color-primary);
 		border-radius: 6px;
 		overflow: hidden;
 	}
@@ -209,7 +209,7 @@
 	.gr-label {
 		font-size: 10px;
 		font-weight: 400;
-		color: #888;
+		color: var(--body-text-color-subdued);
 		padding-left: 4px;
 	}
 
@@ -223,7 +223,7 @@
 		height: 20px;
 		padding: 3px;
 		border: none;
-		background: rgba(255, 255, 255, 0.08);
+		background: color-mix(in srgb, var(--body-text-color) 8%, transparent);
 		border-radius: 4px;
 		cursor: pointer;
 		display: flex;
@@ -235,33 +235,33 @@
 	.action-btn svg {
 		width: 12px;
 		height: 12px;
-		color: #888;
+		color: var(--body-text-color-subdued);
 	}
 
 	.action-btn:hover {
-		background: rgba(255, 255, 255, 0.15);
+		background: color-mix(in srgb, var(--body-text-color) 15%, transparent);
 	}
 
 	.action-btn:hover svg {
-		color: #fff;
+		color: var(--body-text-color);
 	}
 
 	.action-btn.recording {
-		background: #dc2626;
+		background: var(--error-border-color);
 		animation: pulse-recording 1.5s ease-in-out infinite;
 	}
 
 	.action-btn.recording svg {
-		color: #fff;
+		color: var(--button-primary-text-color);
 	}
 
 	.action-btn.recording:hover {
-		background: #ef4444;
+		background: var(--error-text-color);
 	}
 
 	@keyframes pulse-recording {
-		0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
-		50% { box-shadow: 0 0 0 4px rgba(220, 38, 38, 0); }
+		0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--error-border-color) 40%, transparent); }
+		50% { box-shadow: 0 0 0 4px transparent; }
 	}
 
 	.recording-indicator {
@@ -269,13 +269,13 @@
 		align-items: center;
 		gap: 8px;
 		padding: 12px 10px;
-		background: linear-gradient(135deg, #1e1e1e 0%, #171717 100%);
+		background: linear-gradient(135deg, var(--block-background-fill) 0%, color-mix(in srgb, var(--block-background-fill) 90%, black) 100%);
 	}
 
 	.recording-dot {
 		width: 10px;
 		height: 10px;
-		background: #dc2626;
+		background: var(--error-border-color);
 		border-radius: 50%;
 		animation: blink 1s ease-in-out infinite;
 	}
@@ -288,18 +288,18 @@
 	.recording-time {
 		font-size: 12px;
 		font-family: 'SF Mono', Monaco, monospace;
-		color: #dc2626;
+		color: var(--error-border-color);
 		font-weight: 600;
 	}
 
 	.recording-text {
 		font-size: 11px;
-		color: #888;
+		color: var(--body-text-color-subdued);
 	}
 
 	.gr-empty {
 		font-size: 11px;
-		color: #555;
+		color: var(--input-placeholder-color);
 		font-style: italic;
 		padding: 6px;
 		text-align: center;
