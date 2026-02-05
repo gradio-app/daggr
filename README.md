@@ -85,7 +85,7 @@ Use Daggr when:
 * You want to define an AI workflow in Python involving Gradio Spaces, inference providers, or custom functions
 * The workflow is complex enough that inspecting intermediate outputs or rerunning individual steps is useful
 * You need a fixed pipeline that you or others can run with different inputs
-* You want to explore variations—generate multiple outputs, compare them, and always know exactly what inputs produced each result
+* You want to explore variations, e.g. generate multiple outputs, compare them, and always know exactly what inputs produced each result
 
 **Why not... ComfyUI?** ComfyUI is a visual node editor where you build workflows by dragging and connecting nodes. Daggr takes a code-first approach: you define workflows in Python and the visual canvas is generated automatically. If you prefer writing code over visual editing, Daggr may be a better fit. In addition, Daggr works with Gradio Spaces and Hugging Face models directly, no need for specialized nodes.
 
