@@ -8,9 +8,7 @@ class TestComponentTypeWarning:
     def test_warns_when_type_explicitly_set(self):
         import gradio as gr
 
-        with pytest.warns(
-            UserWarning, match="daggr ignores the `type` parameter"
-        ):
+        with pytest.warns(UserWarning, match="daggr ignores the `type` parameter"):
             FnNode(
                 lambda image: image,
                 inputs={"image": gr.Image(type="numpy")},
@@ -18,9 +16,9 @@ class TestComponentTypeWarning:
             )
 
     def test_no_warning_when_type_not_set(self):
-        import gradio as gr
-
         import warnings
+
+        import gradio as gr
 
         with warnings.catch_warnings():
             warnings.simplefilter("error")

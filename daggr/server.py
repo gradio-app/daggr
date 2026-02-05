@@ -19,6 +19,9 @@ from fastapi.responses import (
 )
 
 from daggr.executor import AsyncExecutor
+from daggr.node import _FILE_TYPE_COMPONENTS
+
+_FILE_COMP_TYPES = {c.lower() for c in _FILE_TYPE_COMPONENTS}
 from daggr.session import ExecutionSession
 from daggr.state import SessionState
 
@@ -847,7 +850,7 @@ class DaggrServer:
                     )
                 else:
                     value = result
-                if comp_type in ("audio", "image", "video", "file", "model3d"):
+                if comp_type in _FILE_COMP_TYPES:
                     error = self._validate_file_value(value, comp_type)
                     if error and validation_error is None:
                         validation_error = error

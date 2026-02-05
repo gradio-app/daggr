@@ -19,9 +19,14 @@ from typing import Any
 from daggr._utils import suggest_similar
 from daggr.port import ItemList, Port, PortNamespace, is_port
 
-
 _FILE_TYPE_COMPONENTS = {
-    "Image", "Audio", "Video", "File", "Gallery", "ImageEditor", "ImageSlider",
+    "Image",
+    "Audio",
+    "Video",
+    "File",
+    "Gallery",
+    "ImageEditor",
+    "ImageSlider",
 }
 
 
