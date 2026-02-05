@@ -1012,7 +1012,7 @@
 
 	function getRunMode(nodeName: string): 'step' | 'toHere' {
 		void runModeVersion;
-		return nodeRunModes[nodeName] ?? 'toHere';
+		return nodeRunModes[nodeName] ?? 'step';
 	}
 
 	function getBadgeStyle(type: string): string {
@@ -1221,18 +1221,18 @@
 								class:running={runningNodes.has(node.name)}
 								class:disabled={runningNodes.has(node.name)}
 								onclick={(e) => handleRunNode(e, node.name)}
-								title={runningNodes.has(node.name) ? "Running..." : ((nodeRunModes[node.name] ?? 'toHere') === 'toHere' ? "Run to here" : "Run this step")}
+								title={runningNodes.has(node.name) ? "Running..." : ((nodeRunModes[node.name] ?? 'step') === 'toHere' ? "Run to here" : "Run this step")}
 								role="button"
 								tabindex="0"
 							>
-								{#if node.is_map_node || (nodeRunModes[node.name] ?? 'toHere') === 'toHere'}
+								{#if node.is_map_node || (nodeRunModes[node.name] ?? 'step') === 'toHere'}
 									<svg class="run-icon-svg run-icon-double" viewBox="0 0 14 12" fill="currentColor">
 										<path d="M2 1 L10 6 L2 11 Z" opacity="0.5" transform="translate(-2, 0)"/>
 										<path d="M2 1 L10 6 L2 11 Z" transform="translate(2, 0)"/>
 									</svg>
 								{:else}
-									<svg class="run-icon-svg" viewBox="0 0 10 12" fill="currentColor">
-										<path d="M1 1 L9 6 L1 11 Z"/>
+									<svg class="run-icon-svg" viewBox="0 0 10 10" fill="currentColor">
+										<path d="M2 1 L8 5 L2 9 Z"/>
 									</svg>
 								{/if}
 								{#if runningNodes.has(node.name)}
@@ -1254,7 +1254,7 @@
 								<div class="run-mode-menu">
 									<button 
 										class="run-mode-option"
-										class:active={(nodeRunModes[node.name] ?? 'toHere') === 'step'}
+										class:active={(nodeRunModes[node.name] ?? 'step') === 'step'}
 										onclick={(e) => { e.stopPropagation(); setRunMode(node.name, 'step'); }}
 									>
 										<svg class="run-mode-icon" viewBox="0 0 10 12" fill="currentColor">
@@ -1264,7 +1264,7 @@
 									</button>
 									<button 
 										class="run-mode-option"
-										class:active={(nodeRunModes[node.name] ?? 'toHere') === 'toHere'}
+										class:active={(nodeRunModes[node.name] ?? 'step') === 'toHere'}
 										onclick={(e) => { e.stopPropagation(); setRunMode(node.name, 'toHere'); }}
 									>
 										<svg class="run-mode-icon run-mode-icon-double" viewBox="0 0 14 12" fill="currentColor">
