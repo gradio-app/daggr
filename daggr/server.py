@@ -96,6 +96,10 @@ class DaggrServer:
         self.connections: dict[str, WebSocket] = {}
         self.theme = _get_theme(theme)
         self.theme_css = self.theme._get_theme_css()
+        self._dependency_warnings: list[dict[str, Any]] = []
+        self._current_hashes: dict[str, dict[str, Any]] = {}
+        if self.graph.persist_key:
+            self._check_dependency_hashes()
         self._setup_routes()
 
     def _extract_token_from_header(self, authorization: str | None) -> str | None:
@@ -115,6 +119,122 @@ class DaggrServer:
             }
         except Exception:
             return None
+
+    def _fetch_commit_hash(self, dep_type: str, dep_id: str) -> str | None:
+        try:
+            if dep_type == "space":
+                from huggingface_hub import space_info
+                info = space_info(dep_id)
+                return info.sha
+            elif dep_type == "model":
+                from huggingface_hub import model_info
+                info = model_info(dep_id)
+                return info.sha
+        except Exception:
+            pass
+        return None
+
+    def _collect_dependency_nodes(self) -> list[tuple[str, str, str]]:
+        from daggr.node import ChoiceNode, GradioNode, InferenceNode
+
+        deps = []
+        for node_name, node in self.graph.nodes.items():
+            if isinstance(node, ChoiceNode):
+                for variant in node._variants:
+                    if isinstance(variant, GradioNode):
+                        src = variant._src
+                        if not src.startswith("http://") and not src.startswith("https://") and "/" in src:
+                            deps.append((node_name, "space", src))
+                    elif isinstance(variant, InferenceNode):
+                        deps.append((node_name, "model", variant._model_name_for_hub))
+            elif isinstance(node, GradioNode):
+                src = node._src
+                if not src.startswith("http://") and not src.startswith("https://") and "/" in src:
+                    deps.append((node_name, "space", src))
+            elif isinstance(node, InferenceNode):
+                deps.append((node_name, "model", node._model_name_for_hub))
+        return deps
+
+    def _check_dependency_hashes(self):
+        persist_key = self.graph.persist_key
+        if not persist_key:
+            return
+
+        deps = self._collect_dependency_nodes()
+        if not deps:
+            return
+
+        stored_hashes = self.state.get_dependency_hashes(persist_key)
+
+        for node_name, dep_type, dep_id in deps:
+            current_hash = self._fetch_commit_hash(dep_type, dep_id)
+            self._current_hashes[node_name] = {
+                "dep_type": dep_type,
+                "dep_id": dep_id,
+                "commit_hash": current_hash,
+            }
+
+            if node_name in stored_hashes:
+                stored = stored_hashes[node_name]
+                old_hash = stored["commit_hash"]
+                if old_hash and current_hash and old_hash != current_hash:
+                    dep_label = "Space" if dep_type == "space" else "Model"
+                    self._dependency_warnings.append({
+                        "node_name": node_name,
+                        "dep_type": dep_type,
+                        "dep_id": dep_id,
+                        "old_hash": old_hash,
+                        "new_hash": current_hash,
+                        "message": (
+                            f"The upstream {dep_label} '{dep_id}' used by node "
+                            f"'{node_name}' has changed since your last session "
+                            f"(was {old_hash[:8]}, now {current_hash[:8]}). "
+                            f"Results may differ from previous runs."
+                        ),
+                    })
+                elif current_hash:
+                    self.state.save_dependency_hash(
+                        persist_key, node_name, dep_type, dep_id, current_hash
+                    )
+            else:
+                if current_hash:
+                    self.state.save_dependency_hash(
+                        persist_key, node_name, dep_type, dep_id, current_hash
+                    )
+
+    def _duplicate_space_for_node(self, node_name: str, hf_token: str) -> str:
+        from huggingface_hub import duplicate_space
+
+        info = self._current_hashes.get(node_name)
+        if not info or info["dep_type"] != "space":
+            raise ValueError(f"Node '{node_name}' is not backed by a HF Space.")
+
+        space_id = info["dep_id"]
+        new_repo = duplicate_space(space_id, token=hf_token, private=False)
+        new_space_id = new_repo.repo_id
+
+        from daggr.node import ChoiceNode, GradioNode
+        node = self.graph.nodes[node_name]
+        if isinstance(node, ChoiceNode):
+            for variant in node._variants:
+                if isinstance(variant, GradioNode) and variant._src == space_id:
+                    variant._src = new_space_id
+                    break
+        elif isinstance(node, GradioNode):
+            node._src = new_space_id
+
+        new_hash = self._fetch_commit_hash("space", new_space_id)
+        if new_hash and self.graph.persist_key:
+            self._current_hashes[node_name] = {
+                "dep_type": "space",
+                "dep_id": new_space_id,
+                "commit_hash": new_hash,
+            }
+            self.state.save_dependency_hash(
+                self.graph.persist_key, node_name, "space", new_space_id, new_hash
+            )
+
+        return new_space_id
 
     def _setup_routes(self):
         frontend_dir = Path(__file__).parent / "frontend" / "dist"
@@ -432,6 +552,7 @@ class DaggrServer:
                                 self._transform_persisted_results(persisted_results)
                             )
                             graph_data["transform"] = persisted_transform
+                            graph_data["dependency_warnings"] = self._dependency_warnings
 
                             await websocket.send_json(
                                 {"type": "graph", "data": graph_data}
@@ -493,6 +614,59 @@ class DaggrServer:
                                     "variant_index": variant_index,
                                 }
                             )
+
+                    elif action == "dismiss_dependency_warning":
+                        node_name = data.get("node_name")
+                        if node_name and self.graph.persist_key:
+                            info = self._current_hashes.get(node_name)
+                            if info and info["commit_hash"]:
+                                self.state.save_dependency_hash(
+                                    self.graph.persist_key,
+                                    node_name,
+                                    info["dep_type"],
+                                    info["dep_id"],
+                                    info["commit_hash"],
+                                )
+                            self._dependency_warnings = [
+                                w for w in self._dependency_warnings
+                                if w["node_name"] != node_name
+                            ]
+                            await websocket.send_json({
+                                "type": "dependency_warning_dismissed",
+                                "node_name": node_name,
+                            })
+
+                    elif action == "duplicate_space":
+                        node_name = data.get("node_name")
+                        hf_token = data.get("hf_token") or session.hf_token
+                        if node_name and hf_token:
+                            try:
+                                result = await asyncio.to_thread(
+                                    self._duplicate_space_for_node,
+                                    node_name,
+                                    hf_token,
+                                )
+                                await websocket.send_json({
+                                    "type": "space_duplicated",
+                                    "node_name": node_name,
+                                    "new_space_id": result,
+                                })
+                                self._dependency_warnings = [
+                                    w for w in self._dependency_warnings
+                                    if w["node_name"] != node_name
+                                ]
+                            except Exception as e:
+                                await websocket.send_json({
+                                    "type": "error",
+                                    "error": f"Failed to duplicate Space: {e}",
+                                    "node": node_name,
+                                })
+                        elif not hf_token:
+                            await websocket.send_json({
+                                "type": "error",
+                                "error": "Login with a Hugging Face token to duplicate Spaces.",
+                                "node": node_name,
+                            })
 
             except WebSocketDisconnect:
                 for task in running_tasks:

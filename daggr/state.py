@@ -99,6 +99,24 @@ class SessionState:
             ON node_results(sheet_id, node_name)
         """)
 
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS dependency_hashes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                graph_name TEXT NOT NULL,
+                node_name TEXT NOT NULL,
+                dep_type TEXT NOT NULL,
+                dep_id TEXT NOT NULL,
+                commit_hash TEXT,
+                recorded_at TEXT,
+                UNIQUE(graph_name, node_name)
+            )
+        """)
+
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_dependency_hashes_graph
+            ON dependency_hashes(graph_name)
+        """)
+
         conn.commit()
         conn.close()
 
@@ -447,6 +465,51 @@ class SessionState:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM node_inputs WHERE sheet_id = ?", (sheet_id,))
         cursor.execute("DELETE FROM node_results WHERE sheet_id = ?", (sheet_id,))
+        conn.commit()
+        conn.close()
+
+    def get_dependency_hashes(self, graph_name: str) -> dict[str, dict[str, Any]]:
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT node_name, dep_type, dep_id, commit_hash, recorded_at "
+            "FROM dependency_hashes WHERE graph_name = ?",
+            (graph_name,),
+        )
+        rows = cursor.fetchall()
+        conn.close()
+        result: dict[str, dict[str, Any]] = {}
+        for node_name, dep_type, dep_id, commit_hash, recorded_at in rows:
+            result[node_name] = {
+                "dep_type": dep_type,
+                "dep_id": dep_id,
+                "commit_hash": commit_hash,
+                "recorded_at": recorded_at,
+            }
+        return result
+
+    def save_dependency_hash(
+        self,
+        graph_name: str,
+        node_name: str,
+        dep_type: str,
+        dep_id: str,
+        commit_hash: str | None,
+    ):
+        now = datetime.now().isoformat()
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute(
+            """INSERT INTO dependency_hashes
+               (graph_name, node_name, dep_type, dep_id, commit_hash, recorded_at)
+               VALUES (?, ?, ?, ?, ?, ?)
+               ON CONFLICT(graph_name, node_name)
+               DO UPDATE SET dep_type = excluded.dep_type,
+                             dep_id = excluded.dep_id,
+                             commit_hash = excluded.commit_hash,
+                             recorded_at = excluded.recorded_at""",
+            (graph_name, node_name, dep_type, dep_id, commit_hash, now),
+        )
         conn.commit()
         conn.close()
 

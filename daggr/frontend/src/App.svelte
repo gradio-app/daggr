@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { EmbeddedComponent, MapItemsSection, ItemListSection } from './components';
-	import type { GraphNode, GraphEdge, CanvasData, GradioComponentData } from './types';
+	import type { GraphNode, GraphEdge, CanvasData, GradioComponentData, DependencyWarning } from './types';
 
 	interface Sheet {
 		sheet_id: string;
@@ -58,6 +58,8 @@
 	let loginLoading = $state(false);
 	let loginError = $state('');
 	let hasShownPersistencePrompt = $state(false);
+	let dependencyWarnings = $state<DependencyWarning[]>([]);
+	let duplicatingSpaces = $state<Set<string>>(new Set());
 
 	const HF_TOKEN_KEY = 'daggr_hf_token';
 
@@ -475,6 +477,16 @@
 					scale: data.data.transform.scale ?? 1
 				};
 			}
+			
+			if (data.data.dependency_warnings?.length > 0) {
+				dependencyWarnings = data.data.dependency_warnings;
+			}
+		} else if (data.type === 'dependency_warning_dismissed') {
+			dependencyWarnings = dependencyWarnings.filter(w => w.node_name !== data.node_name);
+		} else if (data.type === 'space_duplicated') {
+			dependencyWarnings = dependencyWarnings.filter(w => w.node_name !== data.node_name);
+			duplicatingSpaces.delete(data.node_name);
+			duplicatingSpaces = new Set(duplicatingSpaces);
 		} else if (data.type === 'node_started') {
 			const startedNode = data.started_node;
 			if (startedNode) {
@@ -1033,6 +1045,28 @@
 		return nodeRunModes[nodeName] ?? 'toHere';
 	}
 
+	function dismissDependencyWarning(nodeName: string) {
+		if (ws && wsConnected) {
+			ws.send(JSON.stringify({
+				action: 'dismiss_dependency_warning',
+				node_name: nodeName
+			}));
+		}
+		dependencyWarnings = dependencyWarnings.filter(w => w.node_name !== nodeName);
+	}
+
+	function duplicateSpace(nodeName: string) {
+		if (ws && wsConnected) {
+			duplicatingSpaces.add(nodeName);
+			duplicatingSpaces = new Set(duplicatingSpaces);
+			ws.send(JSON.stringify({
+				action: 'duplicate_space',
+				node_name: nodeName,
+				hf_token: getStoredToken()
+			}));
+		}
+	}
+
 	function getBadgeStyle(type: string): string {
 		const colors: Record<string, string> = {
 			'FN': 'var(--color-accent)',
@@ -1478,6 +1512,39 @@
 			</div>
 		{/if}
 	</div>
+
+	{#if dependencyWarnings.length > 0}
+		<div class="dependency-warnings">
+			{#each dependencyWarnings as warning (warning.node_name)}
+				<div class="dependency-warning">
+					<div class="warning-icon">⚠</div>
+					<div class="warning-content">
+						<div class="warning-title">
+							{warning.dep_type === 'space' ? 'Space' : 'Model'} changed: <strong>{warning.dep_id}</strong>
+						</div>
+						<div class="warning-detail">
+							Node "{warning.node_name}" — was <code>{warning.old_hash.slice(0, 8)}</code>, now <code>{warning.new_hash.slice(0, 8)}</code>
+						</div>
+					</div>
+					<div class="warning-actions">
+						{#if warning.dep_type === 'space'}
+							<button
+								class="warning-btn warning-btn-primary"
+								disabled={duplicatingSpaces.has(warning.node_name)}
+								onclick={() => duplicateSpace(warning.node_name)}
+							>
+								{duplicatingSpaces.has(warning.node_name) ? 'Duplicating...' : 'Duplicate Space'}
+							</button>
+						{/if}
+						<button
+							class="warning-btn warning-btn-secondary"
+							onclick={() => dismissDependencyWarning(warning.node_name)}
+						>Dismiss</button>
+					</div>
+				</div>
+			{/each}
+		</div>
+	{/if}
 
 	{#if !wsConnected}
 		<div class="connection-status">Connecting...</div>
@@ -2417,5 +2484,111 @@
 		font-family: 'SF Mono', Monaco, monospace;
 		min-width: 32px;
 		text-align: center;
+	}
+
+	.dependency-warnings {
+		position: fixed;
+		bottom: 16px;
+		right: 16px;
+		z-index: 1000;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		max-width: 420px;
+	}
+
+	.dependency-warning {
+		display: flex;
+		align-items: flex-start;
+		gap: 10px;
+		background: color-mix(in srgb, var(--block-background-fill) 95%, transparent);
+		border: 1px solid color-mix(in srgb, #f59e0b 40%, transparent);
+		border-radius: 10px;
+		padding: 12px 14px;
+		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+		animation: slideIn 0.3s ease;
+	}
+
+	@keyframes slideIn {
+		from { transform: translateX(20px); opacity: 0; }
+		to { transform: translateX(0); opacity: 1; }
+	}
+
+	.warning-icon {
+		font-size: 16px;
+		flex-shrink: 0;
+		margin-top: 1px;
+	}
+
+	.warning-content {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.warning-title {
+		font-size: 12px;
+		font-weight: 600;
+		color: #f59e0b;
+		margin-bottom: 3px;
+	}
+
+	.warning-title strong {
+		color: var(--body-text-color);
+	}
+
+	.warning-detail {
+		font-size: 11px;
+		color: var(--body-text-color-subdued);
+		line-height: 1.4;
+	}
+
+	.warning-detail code {
+		font-family: 'SF Mono', Monaco, monospace;
+		font-size: 10px;
+		background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+		padding: 1px 4px;
+		border-radius: 3px;
+	}
+
+	.warning-actions {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		flex-shrink: 0;
+	}
+
+	.warning-btn {
+		font-size: 11px;
+		font-weight: 600;
+		padding: 5px 10px;
+		border-radius: 5px;
+		cursor: pointer;
+		border: none;
+		transition: all 0.15s;
+		white-space: nowrap;
+	}
+
+	.warning-btn-primary {
+		background: #f59e0b;
+		color: #000;
+	}
+
+	.warning-btn-primary:hover:not(:disabled) {
+		background: #d97706;
+	}
+
+	.warning-btn-primary:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.warning-btn-secondary {
+		background: color-mix(in srgb, var(--body-text-color-subdued) 15%, transparent);
+		color: var(--body-text-color-subdued);
+	}
+
+	.warning-btn-secondary:hover {
+		background: color-mix(in srgb, var(--body-text-color-subdued) 25%, transparent);
+		color: var(--body-text-color);
 	}
 </style>
