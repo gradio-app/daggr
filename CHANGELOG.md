@@ -1,5 +1,16 @@
 # daggr
 
+## 0.6.0
+
+### Features
+
+- [#54](https://github.com/gradio-app/daggr/pull/54) [`c1abb26`](https://github.com/gradio-app/daggr/commit/c1abb260b254af6ca2060292232049ea89f0f944) - Fix cache.  Thanks @abidlabs!
+- [#56](https://github.com/gradio-app/daggr/pull/56) [`6e3dfc0`](https://github.com/gradio-app/daggr/commit/6e3dfc0a585b673adb77bb11ab1dcfd80d01da5a) - Add paste from clipboard button to Image component.  Thanks @abidlabs!
+- [#57](https://github.com/gradio-app/daggr/pull/57) [`76855ba`](https://github.com/gradio-app/daggr/commit/76855ba967e3f3132e8ec0590ae037d3151af310) - Fix dropdown options being clipped inside node.  Thanks @abidlabs!
+- [#58](https://github.com/gradio-app/daggr/pull/58) [`eb52b72`](https://github.com/gradio-app/daggr/commit/eb52b725b17d277e85f6eac1cc9d07f8068b011b) - Add theme support to daggr.  Thanks @abidlabs!
+- [#59](https://github.com/gradio-app/daggr/pull/59) [`78189a4`](https://github.com/gradio-app/daggr/commit/78189a4163b4041c814e52110b65754dc4dbf863) - Add run mode dropdown to control node execution scope.  Thanks @abidlabs!
+- [#39](https://github.com/gradio-app/daggr/pull/39) [`e8792ad`](https://github.com/gradio-app/daggr/commit/e8792ad1b5818ff8d13660b0b156f329bbc1c33a) - feat: add --state-db-path CLI arg and DAGGR_DB_PATH env var support.  Thanks @leith-bartrich!
+
 ## 0.5.4
 
 ### Features
