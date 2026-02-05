@@ -323,6 +323,7 @@ class DaggrServer:
                 selected_results: dict,
                 run_id: str,
                 user_id: str | None,
+                run_ancestors: bool = True,
             ):
                 try:
                     async for result in self._execute_to_node_streaming(
@@ -334,6 +335,7 @@ class DaggrServer:
                         selected_results,
                         run_id,
                         user_id,
+                        run_ancestors,
                     ):
                         await websocket.send_json(result)
                 except Exception as e:
@@ -373,6 +375,7 @@ class DaggrServer:
                         selected_results = data.get("selected_results", {})
                         run_id = data.get("run_id")
                         sheet_id = data.get("sheet_id") or current_sheet_id
+                        run_ancestors = data.get("run_ancestors", True)
 
                         task = asyncio.create_task(
                             run_node_execution(
@@ -383,6 +386,7 @@ class DaggrServer:
                                 selected_results,
                                 run_id,
                                 user_id,
+                                run_ancestors,
                             )
                         )
                         running_tasks.add(task)
@@ -1562,6 +1566,7 @@ class DaggrServer:
         selected_results: dict[str, int],
         run_id: str,
         user_id: str | None = None,
+        run_ancestors: bool = True,
     ):
         from daggr.node import ChoiceNode, InteractionNode
 
@@ -1577,8 +1582,11 @@ class DaggrServer:
                 variant_idx = input_values.get(node_id, {}).get("_selected_variant", 0)
                 session.selected_variants[node_name] = variant_idx
 
-        ancestors = self._get_ancestors(target_node)
-        nodes_to_run = ancestors + [target_node]
+        if run_ancestors:
+            ancestors = self._get_ancestors(target_node)
+            nodes_to_run = ancestors + [target_node]
+        else:
+            nodes_to_run = [target_node]
         execution_order = self.graph.get_execution_order()
         nodes_to_execute = [n for n in execution_order if n in nodes_to_run]
 

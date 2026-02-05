@@ -37,6 +37,10 @@
 	let nodeErrors = $state<Record<string, string>>({});
 	let timerTick = $state(0);
 	let hfUser = $state<{ username: string; fullname: string; avatar_url: string } | null>(null);
+	let nodeRunModes = $state<Record<string, 'step' | 'toHere'>>({});
+	let runModeMenuOpen = $state<string | null>(null);
+	let runModeVersion = $state(0);
+	let highlightedNodes = $state<Set<string>>(new Set());
 
 	let sheets = $state<Sheet[]>([]);
 	let currentSheetId = $state<string | null>(null);
@@ -612,9 +616,11 @@
 			for (const edge of edges) {
 				if (edge.to_node === current.replace(/ /g, '_').replace(/-/g, '_')) {
 					const sourceNode = nodes.find(n => n.id === edge.from_node);
-					if (sourceNode && !sourceNode.is_input_node && !ancestors.has(sourceNode.name)) {
+					if (sourceNode && !ancestors.has(sourceNode.name)) {
 						ancestors.add(sourceNode.name);
-						toVisit.push(sourceNode.name);
+						if (!sourceNode.is_input_node) {
+							toVisit.push(sourceNode.name);
+						}
 					}
 				}
 			}
@@ -777,6 +783,8 @@
 			is_gathered: boolean;
 			isStale: boolean;
 			forkPaths?: string[];
+			fromNodeName: string;
+			toNodeName: string;
 		}[] = [];
 		
 		for (const edge of edges) {
@@ -830,7 +838,7 @@
 					`M ${forkStart} ${y2} L ${x2} ${y2}`,
 					`M ${forkStart} ${y2} L ${x2} ${y2 + forkSpread}`,
 				];
-				paths.push({ id: edge.id, d, is_scattered, is_gathered, isStale, forkPaths });
+				paths.push({ id: edge.id, d, is_scattered, is_gathered, isStale, forkPaths, fromNodeName: fromNode.name, toNodeName: toNode.name });
 			} else if (is_gathered) {
 				const forkEnd = x1 + 30;
 				const forkSpread = 8;
@@ -840,10 +848,10 @@
 					`M ${x1} ${y1 + forkSpread} L ${forkEnd} ${y1}`,
 				];
 				const d = `M ${forkEnd} ${y1} C ${forkEnd + cp - 30} ${y1}, ${x2 - cp} ${y2}, ${x2} ${y2}`;
-				paths.push({ id: edge.id, d, is_scattered, is_gathered, isStale, forkPaths });
+				paths.push({ id: edge.id, d, is_scattered, is_gathered, isStale, forkPaths, fromNodeName: fromNode.name, toNodeName: toNode.name });
 			} else {
 				const d = `M ${x1} ${y1} C ${x1 + cp} ${y1}, ${x2 - cp} ${y2}, ${x2} ${y2}`;
-				paths.push({ id: edge.id, d, is_scattered, is_gathered, isStale });
+				paths.push({ id: edge.id, d, is_scattered, is_gathered, isStale, fromNodeName: fromNode.name, toNodeName: toNode.name });
 			}
 		}
 		
@@ -897,6 +905,10 @@
 		if (e.button === 0 && e.target === canvasEl) {
 			isPanning = true;
 			startPan = { x: e.clientX - transform.x, y: e.clientY - transform.y };
+		}
+		const target = e.target as HTMLElement;
+		if (!target.closest('.run-controls')) {
+			runModeMenuOpen = null;
 		}
 	}
 
@@ -958,13 +970,14 @@
 		debounceSaveTransform();
 	}
 
-	function handleRunToNode(e: MouseEvent, nodeName: string) {
+	function handleRunNode(e: MouseEvent, nodeName: string, runMode?: 'step' | 'toHere') {
 		e.stopPropagation();
 		
 		if (runningNodes.has(nodeName)) {
 			return;
 		}
 		
+		const mode = runMode ?? nodeRunModes[nodeName] ?? 'toHere';
 		const runId = `${nodeName}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 		
 		runningNodes.add(nodeName);
@@ -980,9 +993,44 @@
 				selected_results: selectedResultIndex,
 				run_id: runId,
 				sheet_id: currentSheetId,
-				hf_token: getStoredToken()
+				hf_token: getStoredToken(),
+				run_ancestors: mode === 'toHere'
 			}));
 		}
+	}
+
+	function setRunMode(nodeName: string, mode: 'step' | 'toHere') {
+		nodeRunModes[nodeName] = mode;
+		nodeRunModes = { ...nodeRunModes };
+		runModeVersion++;
+		runModeMenuOpen = null;
+	}
+
+	function highlightRunTargets(nodeName: string, mode: 'step' | 'toHere') {
+		if (mode === 'step') {
+			highlightedNodes = new Set([nodeName]);
+		} else {
+			const ancestors = getAncestors(nodeName);
+			highlightedNodes = new Set([nodeName, ...ancestors]);
+		}
+	}
+
+	function clearHighlight() {
+		highlightedNodes = new Set();
+	}
+
+	function toggleRunModeMenu(e: MouseEvent, nodeName: string) {
+		e.stopPropagation();
+		if (runModeMenuOpen === nodeName) {
+			runModeMenuOpen = null;
+		} else {
+			runModeMenuOpen = nodeName;
+		}
+	}
+
+	function getRunMode(nodeName: string): 'step' | 'toHere' {
+		void runModeVersion;
+		return nodeRunModes[nodeName] ?? 'toHere';
 	}
 
 	function getBadgeStyle(type: string): string {
@@ -1157,10 +1205,10 @@
 	>
 		<svg class="edges-svg">
 			{#each edgePaths as edge (edge.id)}
-				<path d={edge.d} class="edge-path" class:stale={edge.isStale} />
+				<path d={edge.d} class="edge-path" class:stale={edge.isStale} class:will-run={highlightedNodes.has(edge.fromNodeName) && highlightedNodes.has(edge.toNodeName)} />
 				{#if edge.forkPaths}
 					{#each edge.forkPaths as forkD}
-						<path d={forkD} class="edge-path edge-fork" class:stale={edge.isStale} />
+						<path d={forkD} class="edge-path edge-fork" class:stale={edge.isStale} class:will-run={highlightedNodes.has(edge.fromNodeName) && highlightedNodes.has(edge.toNodeName)} />
 					{/each}
 				{/if}
 			{/each}
@@ -1171,6 +1219,7 @@
 			{@const timeDisplay = getNodeTimeDisplay(node.name)}
 			<div 
 				class="node"
+				class:will-run={highlightedNodes.has(node.name)}
 				style="left: {node.x}px; top: {node.y}px; width: {NODE_WIDTH}px;"
 			>
 				{#if timeDisplay}
@@ -1184,29 +1233,71 @@
 						<span class="node-name">{node.name}</span>
 					{/if}
 					{#if !node.is_input_node}
-						<span 
-							class="run-btn"
-							class:running={runningNodes.has(node.name)}
-							class:disabled={runningNodes.has(node.name)}
-							onclick={(e) => handleRunToNode(e, node.name)}
-							title={runningNodes.has(node.name) ? "Running..." : (node.is_map_node ? "Run all items" : "Run to here")}
-							role="button"
-							tabindex="0"
-						>
-							{#if node.is_map_node}
-								<svg class="run-icon-svg run-icon-map" viewBox="0 0 14 12" fill="currentColor">
-									<path d="M2 1 L12 6 L2 11 Z" opacity="0.5" transform="translate(-2, 0)"/>
-									<path d="M2 1 L12 6 L2 11 Z" transform="translate(2, 0)"/>
+						{#key runModeVersion}
+						<div class="run-controls">
+							<span 
+								class="run-btn"
+								class:running={runningNodes.has(node.name)}
+								class:disabled={runningNodes.has(node.name)}
+								onclick={(e) => handleRunNode(e, node.name)}
+								title={runningNodes.has(node.name) ? "Running..." : ((nodeRunModes[node.name] ?? 'toHere') === 'toHere' ? "Run to here" : "Run this step")}
+								role="button"
+								tabindex="0"
+							>
+								{#if node.is_map_node || (nodeRunModes[node.name] ?? 'toHere') === 'toHere'}
+									<svg class="run-icon-svg run-icon-double" viewBox="0 0 14 12" fill="currentColor">
+										<path d="M2 1 L10 6 L2 11 Z" opacity="0.5" transform="translate(-2, 0)"/>
+										<path d="M2 1 L10 6 L2 11 Z" transform="translate(2, 0)"/>
+									</svg>
+								{:else}
+									<svg class="run-icon-svg" viewBox="0 0 14 12" fill="currentColor">
+										<path d="M3 1 L11 6 L3 11 Z"/>
+									</svg>
+								{/if}
+								{#if runningNodes.has(node.name)}
+									<span class="run-badge"></span>
+								{/if}
+							</span>
+							<span 
+								class="run-mode-toggle"
+								onclick={(e) => toggleRunModeMenu(e, node.name)}
+								role="button"
+								tabindex="0"
+								title="Run options"
+							>
+								<svg viewBox="0 0 10 6" fill="currentColor">
+									<path d="M1 1 L5 5 L9 1" stroke="currentColor" stroke-width="1.5" fill="none"/>
 								</svg>
-							{:else}
-								<svg class="run-icon-svg" viewBox="0 0 10 12" fill="currentColor">
-									<path d="M1 1 L9 6 L1 11 Z"/>
-								</svg>
+							</span>
+							{#if runModeMenuOpen === node.name}
+								<div class="run-mode-menu" onmouseleave={() => clearHighlight()}>
+									<button 
+										class="run-mode-option"
+										class:active={(nodeRunModes[node.name] ?? 'toHere') === 'step'}
+										onclick={(e) => { e.stopPropagation(); setRunMode(node.name, 'step'); clearHighlight(); }}
+										onmouseenter={() => highlightRunTargets(node.name, 'step')}
+									>
+										<svg class="run-mode-icon" viewBox="0 0 10 12" fill="currentColor">
+											<path d="M1 1 L9 6 L1 11 Z"/>
+										</svg>
+										<span>Run this step</span>
+									</button>
+									<button 
+										class="run-mode-option"
+										class:active={(nodeRunModes[node.name] ?? 'toHere') === 'toHere'}
+										onclick={(e) => { e.stopPropagation(); setRunMode(node.name, 'toHere'); clearHighlight(); }}
+										onmouseenter={() => highlightRunTargets(node.name, 'toHere')}
+									>
+										<svg class="run-mode-icon run-mode-icon-double" viewBox="0 0 14 12" fill="currentColor">
+											<path d="M2 1 L10 6 L2 11 Z" opacity="0.5" transform="translate(-2, 0)"/>
+											<path d="M2 1 L10 6 L2 11 Z" transform="translate(2, 0)"/>
+										</svg>
+										<span>Run to here</span>
+									</button>
+								</div>
 							{/if}
-							{#if runningNodes.has(node.name)}
-								<span class="run-badge"></span>
-							{/if}
-						</span>
+						</div>
+						{/key}
 					{/if}
 				</div>
 
@@ -1911,6 +2002,7 @@
 	.edge-path {
 		fill: none;
 		stroke: var(--color-accent);
+		transition: stroke 0.15s ease, stroke-width 0.15s ease, filter 0.15s ease;
 		stroke-width: 2.5;
 		stroke-linecap: round;
 		transition: stroke 0.2s ease;
@@ -1918,6 +2010,12 @@
 
 	.edge-path.stale {
 		stroke: var(--neutral-500);
+	}
+
+	.edge-path.will-run {
+		stroke: var(--color-accent);
+		stroke-width: 3;
+		filter: drop-shadow(0 0 4px var(--color-accent));
 	}
 
 	.edge-fork {
@@ -1932,6 +2030,12 @@
 		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 		overflow: visible;
 		cursor: default;
+		transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	}
+
+	.node.will-run {
+		border-color: var(--color-accent);
+		box-shadow: 0 0 20px color-mix(in srgb, var(--color-accent) 50%, transparent), 0 4px 20px rgba(0, 0, 0, 0.5);
 	}
 
 	.exec-time {
@@ -1994,14 +2098,21 @@
 		text-decoration: underline;
 	}
 
+	.run-controls {
+		position: relative;
+		display: flex;
+		align-items: center;
+	}
+
 	.run-btn {
 		position: relative;
 		font-size: 10px;
 		color: var(--color-accent);
 		cursor: pointer;
 		padding: 2px 6px;
-		border-radius: 4px;
+		border-radius: 4px 0 0 4px;
 		border: 1px solid var(--color-accent);
+		border-right: none;
 		background: transparent;
 		user-select: none;
 		transition: all 0.15s;
@@ -2015,15 +2126,81 @@
 		animation: pulse 1.5s ease-in-out infinite;
 	}
 
-	.run-icon-svg {
-		width: 10px;
-		height: 10px;
-		display: block;
+	.run-mode-toggle {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 16px;
+		height: 18px;
+		border: 1px solid var(--color-accent);
+		border-radius: 0 4px 4px 0;
+		color: var(--color-accent);
+		cursor: pointer;
+		transition: all 0.15s;
 	}
 
-	.run-icon-svg.run-icon-map {
+	.run-mode-toggle:hover {
+		background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+	}
+
+	.run-mode-toggle svg {
+		width: 8px;
+		height: 5px;
+	}
+
+	.run-mode-menu {
+		position: absolute;
+		top: calc(100% + 4px);
+		right: 0;
+		background: color-mix(in srgb, var(--block-background-fill) 98%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+		border-radius: 6px;
+		padding: 4px;
+		min-width: 130px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+		z-index: 1000;
+	}
+
+	.run-mode-option {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		width: 100%;
+		padding: 6px 8px;
+		background: transparent;
+		border: none;
+		border-radius: 4px;
+		color: var(--body-text-color-subdued);
+		font-size: 11px;
+		cursor: pointer;
+		transition: all 0.15s;
+		text-align: left;
+	}
+
+	.run-mode-option:hover {
+		background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+		color: var(--body-text-color);
+	}
+
+	.run-mode-option.active {
+		color: var(--color-accent);
+		background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+	}
+
+	.run-mode-icon {
+		width: 10px;
+		height: 10px;
+		flex-shrink: 0;
+	}
+
+	.run-mode-icon-double {
+		width: 12px;
+	}
+
+	.run-icon-svg {
 		width: 14px;
 		height: 12px;
+		display: block;
 	}
 
 	@keyframes pulse {
