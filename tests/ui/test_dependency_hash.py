@@ -35,7 +35,9 @@ def test_dependency_hash_auto_update_on_stale_cache(page: Page, temp_db: str):
 
     updated_hash = _client_cache.get_dependency_hash("mrfakename/MeloTTS")
     assert updated_hash is not None
-    assert updated_hash != stale_hash, "Hash should have been updated from the stale value"
+    assert updated_hash != stale_hash, (
+        "Hash should have been updated from the stale value"
+    )
 
     server, url = launch_daggr_server(graph, temp_db)
     try:
@@ -46,11 +48,7 @@ def test_dependency_hash_auto_update_on_stale_cache(page: Page, temp_db: str):
         expect(nodes).to_have_count(2)
 
         node_names = page.locator(".node-name")
-        names = [
-            node_names.nth(i).text_content()
-            for i in range(node_names.count())
-        ]
+        names = [node_names.nth(i).text_content() for i in range(node_names.count())]
         assert "MeloTTS" in names
     finally:
         server.close()
-

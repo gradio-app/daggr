@@ -9,7 +9,6 @@ from __future__ import annotations
 import os
 import re
 import sys
-import warnings
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
@@ -26,9 +25,7 @@ if TYPE_CHECKING:
 
 def _parse_space_id(src: str) -> str | None:
     if src.startswith("http://") or src.startswith("https://"):
-        match = re.match(
-            r"https?://huggingface\.co/spaces/([^/]+/[^/?#]+)", src
-        )
+        match = re.match(r"https?://huggingface\.co/spaces/([^/]+/[^/?#]+)", src)
         if match:
             return match.group(1)
         return None
@@ -153,9 +150,7 @@ def _prompt_dependency_changes(changed: list[dict]) -> None:
                     "Updating hash instead.\n"
                     "  Run `huggingface-cli login` to enable Space duplication."
                 )
-                _client_cache.set_dependency_hash(
-                    item["id"], item["current_sha"]
-                )
+                _client_cache.set_dependency_hash(item["id"], item["current_sha"])
             else:
                 print(
                     f"  [daggr] Duplicating '{item['id']}' at revision "
@@ -176,9 +171,7 @@ def _prompt_dependency_changes(changed: list[dict]) -> None:
                         "  [daggr] Duplication failed (revision may have been "
                         "squashed). Updating hash instead."
                     )
-                    _client_cache.set_dependency_hash(
-                        item["id"], item["current_sha"]
-                    )
+                    _client_cache.set_dependency_hash(item["id"], item["current_sha"])
         else:
             _client_cache.set_dependency_hash(item["id"], item["current_sha"])
             print(f"  [daggr] Updated hash for '{item['id']}'.")
@@ -475,13 +468,15 @@ class Graph:
             if cached_sha is None:
                 _client_cache.set_dependency_hash(dep_id, current_sha)
             elif cached_sha != current_sha:
-                changed.append({
-                    "type": dep_type,
-                    "id": dep_id,
-                    "node": node,
-                    "cached_sha": cached_sha,
-                    "current_sha": current_sha,
-                })
+                changed.append(
+                    {
+                        "type": dep_type,
+                        "id": dep_id,
+                        "node": node,
+                        "cached_sha": cached_sha,
+                        "current_sha": current_sha,
+                    }
+                )
 
         if not changed:
             return
