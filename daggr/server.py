@@ -17,7 +17,6 @@ from fastapi.responses import (
     PlainTextResponse,
     Response,
 )
-
 from gradio_client.utils import is_file_obj_with_meta
 
 from daggr.executor import AsyncExecutor

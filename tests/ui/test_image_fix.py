@@ -8,7 +8,9 @@ from playwright.sync_api import Page, expect
 from daggr import FnNode, Graph
 from tests.ui.helpers import launch_daggr_server, wait_for_graph_load
 
-LOGO = str(Path(__file__).resolve().parent.parent.parent / "daggr" / "assets" / "logo_dark.png")
+LOGO = str(
+    Path(__file__).resolve().parent.parent.parent / "daggr" / "assets" / "logo_dark.png"
+)
 
 
 def test_image_initial_value_and_none_input(page: Page, temp_db: str):
@@ -67,4 +69,3 @@ def test_image_initial_value_and_none_input(page: Page, temp_db: str):
         expect(output_imgs).to_have_count(2)
     finally:
         server.close()
-
