@@ -316,7 +316,7 @@ class DaggrServer:
             current_sheet_id: str | None = None
 
             session = ExecutionSession(self.graph)
-            running_tasks: set[asyncio.Task] = set()
+            running_tasks: dict[str, asyncio.Task] = {}
 
             async def run_node_execution(
                 node_name: str,
@@ -341,6 +341,8 @@ class DaggrServer:
                         run_ancestors,
                     ):
                         await websocket.send_json(result)
+                except asyncio.CancelledError:
+                    pass
                 except Exception as e:
                     await websocket.send_json(
                         {
@@ -392,8 +394,24 @@ class DaggrServer:
                                 run_ancestors,
                             )
                         )
-                        running_tasks.add(task)
-                        task.add_done_callback(running_tasks.discard)
+                        running_tasks[run_id] = task
+                        task.add_done_callback(
+                            lambda t, rid=run_id: running_tasks.pop(rid, None)
+                        )
+
+                    elif action == "cancel":
+                        cancel_run_id = data.get("run_id")
+                        cancel_node = data.get("node_name")
+                        task = running_tasks.get(cancel_run_id)
+                        if task:
+                            task.cancel()
+                        await websocket.send_json(
+                            {
+                                "type": "cancelled",
+                                "run_id": cancel_run_id,
+                                "node": cancel_node,
+                            }
+                        )
 
                     elif action == "get_graph":
                         try:
@@ -498,12 +516,12 @@ class DaggrServer:
                             )
 
             except WebSocketDisconnect:
-                for task in running_tasks:
+                for task in running_tasks.values():
                     task.cancel()
                 if session_id in self.connections:
                     del self.connections[session_id]
             except Exception as e:
-                for task in running_tasks:
+                for task in running_tasks.values():
                     task.cancel()
                 print(f"[ERROR] WebSocket error: {e}")
                 import traceback

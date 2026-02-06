@@ -41,6 +41,7 @@
 	let runModeMenuOpen = $state<string | null>(null);
 	let runModeVersion = $state(0);
 	let highlightedNodes = $state<Set<string>>(new Set());
+	let nodeRunIds = $state<Record<string, string>>({});
 
 	let sheets = $state<Sheet[]>([]);
 	let currentSheetId = $state<string | null>(null);
@@ -480,10 +481,24 @@
 			if (startedNode) {
 				runningNodes.add(startedNode);
 				runningNodes = new Set(runningNodes);
+				if (data.run_id) {
+					nodeRunIds[startedNode] = data.run_id;
+				}
 				nodeStartTimes[startedNode] = Date.now();
 				delete nodeErrors[startedNode];
 				startTimer();
 			}
+		} else if (data.type === 'cancelled') {
+			const cancelledRunId = data.run_id;
+			for (const [nodeName, runId] of Object.entries(nodeRunIds)) {
+				if (runId === cancelledRunId) {
+					runningNodes.delete(nodeName);
+					delete nodeStartTimes[nodeName];
+					delete nodeRunIds[nodeName];
+				}
+			}
+			runningNodes = new Set(runningNodes);
+			stopTimerIfNoRunning();
 		} else if (data.type === 'error' && data.error) {
 			console.error('[daggr] server error:', data.error);
 			const errorNode = data.node || data.completed_node;
@@ -493,6 +508,7 @@
 			const nodesToClear = data.nodes_to_clear || (errorNode ? [errorNode] : []);
 			for (const nodeName of nodesToClear) {
 				delete nodeStartTimes[nodeName];
+				delete nodeRunIds[nodeName];
 				runningNodes.delete(nodeName);
 			}
 			runningNodes = new Set(runningNodes);
@@ -503,6 +519,7 @@
 			if (completedNode) {
 				runningNodes.delete(completedNode);
 				runningNodes = new Set(runningNodes);
+				delete nodeRunIds[completedNode];
 			}
 			
 			if (completedNode && data.execution_time_ms != null) {
@@ -616,11 +633,9 @@
 			for (const edge of edges) {
 				if (edge.to_node === current.replace(/ /g, '_').replace(/-/g, '_')) {
 					const sourceNode = nodes.find(n => n.id === edge.from_node);
-					if (sourceNode && !ancestors.has(sourceNode.name)) {
+					if (sourceNode && !ancestors.has(sourceNode.name) && !sourceNode.is_input_node) {
 						ancestors.add(sourceNode.name);
-						if (!sourceNode.is_input_node) {
-							toVisit.push(sourceNode.name);
-						}
+						toVisit.push(sourceNode.name);
 					}
 				}
 			}
@@ -972,16 +987,12 @@
 
 	function handleRunNode(e: MouseEvent, nodeName: string, runMode?: 'step' | 'toHere') {
 		e.stopPropagation();
-		
-		if (runningNodes.has(nodeName)) {
-			return;
-		}
-		
 		const mode = runMode ?? nodeRunModes[nodeName] ?? 'toHere';
 		const runId = `${nodeName}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 		
 		runningNodes.add(nodeName);
 		runningNodes = new Set(runningNodes);
+		nodeRunIds[nodeName] = runId;
 		delete nodeExecutionTimes[nodeName];
 		
 		if (ws && wsConnected) {
@@ -995,6 +1006,18 @@
 				sheet_id: currentSheetId,
 				hf_token: getStoredToken(),
 				run_ancestors: mode === 'toHere'
+			}));
+		}
+	}
+
+	function handleCancelNode(e: MouseEvent, nodeName: string) {
+		e.stopPropagation();
+		const runId = nodeRunIds[nodeName];
+		if (runId && ws && wsConnected) {
+			ws.send(JSON.stringify({
+				action: 'cancel',
+				run_id: runId,
+				node_name: nodeName,
 			}));
 		}
 	}
@@ -1235,12 +1258,23 @@
 					{#if !node.is_input_node}
 						{#key runModeVersion}
 						<div class="run-controls">
+							{#if runningNodes.has(node.name)}
+							<span 
+								class="run-btn running"
+								onclick={(e) => handleCancelNode(e, node.name)}
+								title="Stop"
+								role="button"
+								tabindex="0"
+							>
+								<svg class="run-icon-svg" viewBox="0 0 12 12" fill="currentColor">
+									<rect x="2" y="2" width="8" height="8" rx="1"/>
+								</svg>
+							</span>
+							{:else}
 							<span 
 								class="run-btn"
-								class:running={runningNodes.has(node.name)}
-								class:disabled={runningNodes.has(node.name)}
 								onclick={(e) => handleRunNode(e, node.name)}
-								title={runningNodes.has(node.name) ? "Running..." : ((nodeRunModes[node.name] ?? 'toHere') === 'toHere' ? "Run to here" : "Run this step")}
+								title={(nodeRunModes[node.name] ?? 'toHere') === 'toHere' ? "Run to here" : "Run this step"}
 								role="button"
 								tabindex="0"
 							>
@@ -1254,10 +1288,8 @@
 										<path d="M3 1 L11 6 L3 11 Z"/>
 									</svg>
 								{/if}
-								{#if runningNodes.has(node.name)}
-									<span class="run-badge"></span>
-								{/if}
 							</span>
+							{/if}
 							<span 
 								class="run-mode-toggle"
 								onclick={(e) => toggleRunModeMenu(e, node.name)}
