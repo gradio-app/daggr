@@ -71,4 +71,3 @@ def test_cancel_running_node(page: Page, temp_db: str):
         expect(run_btn_after).to_be_visible()
     finally:
         server.close()
-
