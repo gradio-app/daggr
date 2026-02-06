@@ -4,42 +4,18 @@
 		value: any;
 		open?: boolean | number;
 		showIndices?: boolean;
-		editable?: boolean;
-		onchange?: (value: any) => void;
 	}
 
 	let { 
 		label, 
 		value, 
 		open = 2,
-		showIndices = true,
-		editable = false,
-		onchange,
+		showIndices = true
 	}: Props = $props();
 
 	let copySuccess = $state(false);
 	let containerEl: HTMLDivElement | null = $state(null);
 	let isFullscreen = $state(false);
-	let editText = $state('');
-	let parseError = $state('');
-
-	$effect(() => {
-		if (editable && value !== undefined && value !== null) {
-			editText = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
-		}
-	});
-
-	function handleEdit(e: Event) {
-		const text = (e.target as HTMLTextAreaElement).value;
-		editText = text;
-		try {
-			const parsed = JSON.parse(text);
-			parseError = '';
-			onchange?.(parsed);
-		} catch {
-			parseError = 'Invalid JSON';
-		}
-	}
 
 	function copyJson() {
 		const text = JSON.stringify(value, null, 2);
@@ -91,21 +67,7 @@
 		</div>
 	</div>
 
-	{#if editable}
-		<div class="json-edit-wrap">
-			<textarea
-				class="json-textarea"
-				class:has-error={parseError}
-				value={editText}
-				oninput={handleEdit}
-				placeholder={'{"key": "value"}'}
-				spellcheck="false"
-			></textarea>
-			{#if parseError}
-				<span class="json-parse-error">{parseError}</span>
-			{/if}
-		</div>
-	{:else if value !== null && value !== undefined}
+	{#if value !== null && value !== undefined}
 		<div class="json-content">
 			<JsonNode value={value} depth={0} maxOpen={typeof open === 'number' ? open : (open ? Infinity : 0)} {showIndices} />
 		</div>
@@ -330,47 +292,6 @@
 		color: var(--input-placeholder-color);
 		font-style: italic;
 		padding: 6px 10px;
-	}
-
-	.json-edit-wrap {
-		padding: 0 6px 6px;
-	}
-
-	.json-textarea {
-		width: 100%;
-		min-height: 60px;
-		max-height: 200px;
-		padding: 6px 8px;
-		font-family: 'SF Mono', Monaco, Consolas, monospace;
-		font-size: 11px;
-		line-height: 1.5;
-		color: var(--body-text-color);
-		background: var(--input-background-fill);
-		border: 1px solid var(--border-color-primary);
-		border-radius: 4px;
-		outline: none;
-		resize: vertical;
-		box-sizing: border-box;
-	}
-
-	.json-textarea:focus {
-		border-color: var(--color-accent);
-	}
-
-	.json-textarea.has-error {
-		border-color: var(--error-text-color, #ef5350);
-	}
-
-	.json-textarea::placeholder {
-		color: var(--input-placeholder-color);
-	}
-
-	.json-parse-error {
-		display: block;
-		font-size: 9px;
-		color: var(--error-text-color, #ef5350);
-		margin-top: 2px;
-		padding-left: 2px;
 	}
 </style>
 
