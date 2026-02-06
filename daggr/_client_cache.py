@@ -12,6 +12,8 @@ _client_cache: dict[str, Any] = {}
 _api_memory_cache: dict[str, dict] = {}
 _validated_set: set[str] = set()
 _model_task_cache: dict[str, str] = {}
+_dependency_hash_cache: dict[str, str] = {}
+_dependency_hash_loaded: bool = False
 
 
 def _is_hot_reload() -> bool:
@@ -160,3 +162,39 @@ def set_model_task(model: str, task: str | None) -> None:
 def set_model_not_found(model: str) -> None:
     _model_task_cache[model] = "__NOT_FOUND__"
     _save_model_task_cache()
+
+
+def _get_dependency_hash_path() -> Path:
+    return get_daggr_cache_dir() / "_dependency_hashes.json"
+
+
+def _load_dependency_hash_cache() -> None:
+    global _dependency_hash_cache, _dependency_hash_loaded
+    if _dependency_hash_loaded:
+        return
+    cache_path = _get_dependency_hash_path()
+    if cache_path.exists():
+        try:
+            _dependency_hash_cache = json.loads(cache_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            _dependency_hash_cache = {}
+    _dependency_hash_loaded = True
+
+
+def _save_dependency_hash_cache() -> None:
+    try:
+        get_daggr_cache_dir().mkdir(parents=True, exist_ok=True)
+        _get_dependency_hash_path().write_text(json.dumps(_dependency_hash_cache))
+    except OSError:
+        pass
+
+
+def get_dependency_hash(src: str) -> str | None:
+    _load_dependency_hash_cache()
+    return _dependency_hash_cache.get(src)
+
+
+def set_dependency_hash(src: str, sha: str) -> None:
+    _load_dependency_hash_cache()
+    _dependency_hash_cache[src] = sha
+    _save_dependency_hash_cache()
