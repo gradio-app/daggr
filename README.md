@@ -878,6 +878,7 @@ export DAGGR_LOCAL_NO_FALLBACK=1
 | `DAGGR_LOCAL_VERBOSE` | `0` | Set to `1` to show app stdout/stderr |
 | `DAGGR_LOCAL_NO_FALLBACK` | `0` | Set to `1` to disable fallback to remote |
 | `DAGGR_UPDATE_SPACES` | `0` | Set to `1` to re-clone cached Spaces |
+| `DAGGR_DEPENDENCY_CHECK` | *(unset)* | `skip`, `update`, or `error` — controls upstream hash checking |
 | `GRADIO_SERVER_NAME` | `127.0.0.1` | Host to bind to. Set to `0.0.0.0` on HF Spaces |
 | `GRADIO_SERVER_PORT` | `7860` | Port to bind to |
 
@@ -1043,6 +1044,38 @@ Use `daggr <script>` when you're actively developing and want instant feedback o
 
 Use `python <script>` when you want the standard behavior (no file watching, direct execution).
 
+
+## Upstream Dependency Tracking
+
+When your workflow references external Gradio Spaces or Hugging Face models, those dependencies can change at any time—a Space author might update the model, change the API, or alter default behavior. This can silently break reproducibility: the same workflow with the same inputs may produce different results weeks later.
+
+To address this, daggr tracks the commit SHA of every upstream Space and model the first time your app launches. On subsequent launches, daggr compares the cached SHA against the current version. If an upstream dependency has changed, you'll see a terminal warning:
+
+```
+  ⚠️  Upstream dependency changes detected:
+
+    • space 'mrfakename/MeloTTS' (node: MeloTTS)
+      cached:  a1b2c3d4e5f6
+      current: f6e5d4c3b2a1
+
+  How would you like to handle 'mrfakename/MeloTTS'?
+    [1] Duplicate the original version under your namespace (safer)
+    [2] Update to the latest version
+```
+
+**Option 1 (Spaces only)** downloads the Space at the exact commit you originally built against and re-uploads it under your Hugging Face namespace, so your workflow continues using the known-good version. This requires being logged in via `huggingface-cli login`.
+
+**Option 2** updates the cached hash to accept the new version.
+
+For CI/CD or non-interactive environments, set the `DAGGR_DEPENDENCY_CHECK` environment variable:
+
+| Value | Behavior |
+|-------|----------|
+| `skip` | Skip all dependency checks |
+| `update` | Auto-accept upstream changes |
+| `error` | Fail if any dependency has changed |
+
+Dependency hashes are stored in `~/.cache/huggingface/daggr/_dependency_hashes.json`.
 
 ## Beta Status
 
