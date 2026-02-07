@@ -1,5 +1,17 @@
 # daggr
 
+## 0.7.0
+
+### Features
+
+- [#69](https://github.com/gradio-app/daggr/pull/69) [`297d104`](https://github.com/gradio-app/daggr/commit/297d104d0e3fbd6b59dfcd1f69c9a478de81bc3d) - Add stop button to cancel running nodes.  Thanks @abidlabs!
+- [#64](https://github.com/gradio-app/daggr/pull/64) [`a9e53c6`](https://github.com/gradio-app/daggr/commit/a9e53c64db6b3beede0b19b3876a3e50ab572233) - Fix ChoiceNode: public .name property and respect explicit names.  Thanks @abidlabs!
+- [#62](https://github.com/gradio-app/daggr/pull/62) [`695411c`](https://github.com/gradio-app/daggr/commit/695411ce94bc8fedd3320ac941ab41233bf8f887) - Standardize file handling: all files are path strings.  Thanks @abidlabs!
+- [#66](https://github.com/gradio-app/daggr/pull/66) [`1ed16f8`](https://github.com/gradio-app/daggr/commit/1ed16f806d535413c3718fc47d81d79d93d73ee0) - Fix gr.JSON rendering (use @render snippet syntax).  Thanks @abidlabs!
+- [#63](https://github.com/gradio-app/daggr/pull/63) [`00b05ac`](https://github.com/gradio-app/daggr/commit/00b05ac526642c91560cbebb258626a4511082c2) - Fix file downloads from private HF Spaces.  Thanks @abidlabs!
+- [#70](https://github.com/gradio-app/daggr/pull/70) [`33ccb74`](https://github.com/gradio-app/daggr/commit/33ccb7470a482ee1b09fddf1d51de81b1e2c4a40) - Fix gr.Image not rendering with initial value or None input.  Thanks @abidlabs!
+- [#68](https://github.com/gradio-app/daggr/pull/68) [`4b76dca`](https://github.com/gradio-app/daggr/commit/4b76dca815e2802b70ac03bb95fb03f21d81a8fa) - Add dependency hash tracking for upstream Spaces and models.  Thanks @abidlabs!
+
 ## 0.6.0
 
 ### Features
