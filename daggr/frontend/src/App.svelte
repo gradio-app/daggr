@@ -1036,7 +1036,7 @@
 		if (mode === 'step') {
 			highlightedNodes = new Set([nodeName]);
 		} else {
-			const ancestors = getAncestors(nodeName);
+			const ancestors = getAncestors(nodeName).filter(a => !nodeResults[a]?.length);
 			highlightedNodes = new Set([nodeName, ...ancestors]);
 		}
 	}

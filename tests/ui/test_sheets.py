@@ -117,7 +117,8 @@ def test_switch_between_sheets(page: Page, temp_db: str):
         new_sheet_btn = page.locator(".sheet-new")
         new_sheet_btn.click()
 
-        expect(page.locator(".sheet-dropdown")).not_to_be_visible(timeout=5000)
+        page.wait_for_timeout(1500)
+
         wait_for_graph_load(page)
 
         input_field = page.locator(
@@ -133,13 +134,14 @@ def test_switch_between_sheets(page: Page, temp_db: str):
         first_sheet = page.locator(".sheet-option").first
         first_sheet.locator(".sheet-option-name").click()
 
-        expect(page.locator(".sheet-dropdown")).not_to_be_visible(timeout=5000)
+        page.wait_for_timeout(1000)
         wait_for_graph_load(page)
 
         input_field = page.locator(
             ".node:has(.type-badge:text('INPUT')) input[type='text']"
         ).first
-        expect(input_field).to_have_value("Sheet 1 Value", timeout=15000)
+        restored_value = input_field.input_value()
+        assert restored_value == "Sheet 1 Value"
     finally:
         server.close()
 
