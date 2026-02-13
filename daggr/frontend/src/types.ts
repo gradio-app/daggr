@@ -33,6 +33,7 @@ export interface NodeVariant {
 export interface GraphNode {
 	id: string;
 	name: string;
+	embed_inputs?: boolean;
 	type: string;
 	url?: string;
 	inputs: Port[];

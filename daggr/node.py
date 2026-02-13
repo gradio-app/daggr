@@ -89,11 +89,12 @@ class Node(ABC):
 
     _id_counter = 0
 
-    def __init__(self, name: str | None = None):
+    def __init__(self, name: str | None = None, embed_inputs: bool = False):
         self._id = Node._id_counter
         Node._id_counter += 1
         self._name = name or ""
         self._name_explicitly_set = bool(name)
+        self._embed_inputs = embed_inputs
         self._input_ports: list[str] = []
         self._output_ports: list[str] = []
         self._input_components: dict[str, Any] = {}
@@ -106,6 +107,10 @@ class Node(ABC):
     def name(self) -> str:
         return self._name
 
+    @property
+    def embed_inputs(self) -> bool:
+        return self._embed_inputs
+
     @name.setter
     def name(self, value: str) -> None:
         self._name = value
@@ -117,7 +122,14 @@ class Node(ABC):
         return Port(self, name)
 
     def __dir__(self) -> list[str]:
-        base = ["_name", "_inputs", "_outputs", "_input_ports", "_output_ports"]
+        base = [
+            "_name",
+            "_inputs",
+            "_outputs",
+            "_input_ports",
+            "_embed_inputs",
+            "_output_ports",
+        ]
         return base + self._input_ports + self._output_ports
 
     def __or__(self, other: Node) -> ChoiceNode:
@@ -327,7 +339,9 @@ class GradioNode(Node):
         validate: Whether to validate the Space exists and has the specified endpoint.
         run_locally: If True, clone and run the Space locally instead of using the
             remote API.
-
+        embed_inputs: If True, embeds the input UI components (sliders, textboxes)
+            within the node's body instead of creating separate external Input nodes.
+            Useful for parameter-heavy nodes to reduce graph clutter. Defaults to False.
     Example:
         >>> tts = GradioNode(
         ...     "mrfakename/MeloTTS",
@@ -350,8 +364,9 @@ class GradioNode(Node):
         run_locally: bool = False,
         preprocess: Callable[[dict], dict] | None = None,
         postprocess: Callable[..., Any] | None = None,
+        embed_inputs: bool = False,
     ):
-        super().__init__(name)
+        super().__init__(name, embed_inputs=embed_inputs)
         self._src = space_or_url
         self._api_name = api_name
         self._run_locally = run_locally
@@ -522,7 +537,9 @@ class InferenceNode(Node):
             modified dict before the inference call.
         postprocess: Optional function that receives the raw inference result and
             returns a transformed value before it is mapped to output ports.
-
+        embed_inputs: If True, embeds the input UI components (sliders, textboxes)
+            within the node's body instead of creating separate external Input nodes.
+            Useful for parameter-heavy nodes to reduce graph clutter. Defaults to False.
     Example:
         >>> llm = InferenceNode("meta-llama/Llama-2-7b-chat-hf")
     """
@@ -536,8 +553,9 @@ class InferenceNode(Node):
         validate: bool = True,
         preprocess: Callable[[dict], dict] | None = None,
         postprocess: Callable[..., Any] | None = None,
+        embed_inputs: bool = False,
     ):
-        super().__init__(name)
+        super().__init__(name, embed_inputs=embed_inputs)
         self._model = model
         self._task: str | None = None
         self._task_fetched: bool = False
@@ -641,6 +659,9 @@ class FnNode(Node):
         concurrent: If True, allow parallel execution. Default: False.
         concurrency_group: Name of a group sharing a concurrency limit.
         max_concurrent: Max parallel executions in the group. Default: 1.
+        embed_inputs: If True, embeds the input UI components (sliders, textboxes)
+            within the node's body instead of creating separate external Input nodes.
+            Useful for parameter-heavy nodes to reduce graph clutter. Defaults to False.
 
     Example:
         >>> def process_text(text: str) -> tuple[str, int]:
@@ -668,8 +689,9 @@ class FnNode(Node):
         concurrent: bool = False,
         concurrency_group: str | None = None,
         max_concurrent: int = 1,
+        embed_inputs: bool = False,
     ):
-        super().__init__(name)
+        super().__init__(name, embed_inputs=embed_inputs)
         self._fn = fn
         self._preprocess = preprocess
         self._postprocess = postprocess

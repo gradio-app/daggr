@@ -749,10 +749,10 @@ class DaggrServer:
     def _serialize_component(self, comp, port_name: str) -> dict[str, Any]:
         comp_type = self._get_component_type(comp)
         comp_class = comp.__class__.__name__
-
+        effective_label = getattr(comp, "label", "") or port_name
         props = {
-            "label": getattr(comp, "label", "") or port_name,
-            "show_label": bool(getattr(comp, "label", "")),
+            "label": effective_label,
+            "show_label": bool(effective_label),
             "interactive": getattr(comp, "interactive", True),
             "visible": getattr(comp, "visible", True),
         }
@@ -1069,6 +1069,9 @@ class DaggrServer:
             if isinstance(node, ChoiceNode):
                 continue
 
+            if getattr(node, "embed_inputs", False):
+                continue
+
             if node._input_components:
                 for idx, (port_name, comp) in enumerate(node._input_components.items()):
                     comp_id = id(comp)
@@ -1234,6 +1237,10 @@ class DaggrServer:
 
             node_id = node_name.replace(" ", "_").replace("-", "_")
 
+            embedded_input_components = []
+            if getattr(node, "embed_inputs", False):
+                embedded_input_components = self._build_input_components(node)
+
             input_ports_data = []
             for port in node._input_ports or []:
                 if port in node._fixed_inputs:
@@ -1306,7 +1313,7 @@ class DaggrServer:
                     "y": y,
                     "has_input": False,
                     "input_value": input_values.get(node_name, ""),
-                    "input_components": [],
+                    "input_components": embedded_input_components,
                     "output_components": output_components,
                     "is_map_node": is_scattered,
                     "map_items": scattered_items,
@@ -1322,6 +1329,7 @@ class DaggrServer:
                     "variants": variants,
                     "selected_variant": selected_variant,
                     "validation_error": validation_error,
+                    "embed_inputs": getattr(node, "_embed_inputs", False),
                 }
             )
 
@@ -1478,8 +1486,12 @@ class DaggrServer:
         entry_inputs: dict[str, dict[str, Any]] = {}
         for node_name in nodes_to_execute:
             node = self.graph.nodes[node_name]
+
+            current_node_id = node_name.replace(" ", "_").replace("-", "_")
+
             if node._input_components:
                 node_inputs = {}
+
                 for port_name in node._input_components:
                     input_node_name = f"{node_name}__{port_name}"
                     input_node_id = input_node_name.replace(" ", "_").replace("-", "_")
@@ -1487,8 +1499,18 @@ class DaggrServer:
                         value = input_values[input_node_id].get("value")
                         if value is not None:
                             node_inputs[port_name] = value
+
+                if current_node_id in input_values:
+                    saved_values = input_values[current_node_id]
+                    for port_name in node._input_components:
+                        if port_name in saved_values:
+                            val = saved_values[port_name]
+                            if val is not None:
+                                node_inputs[port_name] = val
+
                 if node_inputs:
                     entry_inputs[node_name] = node_inputs
+
             elif isinstance(node, InteractionNode):
                 value = input_values.get(node_name, "")
                 port = node._input_ports[0] if node._input_ports else "input"
@@ -1575,8 +1597,11 @@ class DaggrServer:
         entry_inputs: dict[str, dict[str, Any]] = {}
         for node_name in nodes_to_execute:
             node = self.graph.nodes[node_name]
+            current_node_id = node_name.replace(" ", "_").replace("-", "_")
+
             if node._input_components:
                 node_inputs = {}
+
                 for port_name in node._input_components:
                     input_node_name = f"{node_name}__{port_name}"
                     input_node_id = input_node_name.replace(" ", "_").replace("-", "_")
@@ -1584,8 +1609,18 @@ class DaggrServer:
                         value = input_values[input_node_id].get("value")
                         if value is not None:
                             node_inputs[port_name] = value
+
+                if current_node_id in input_values:
+                    saved_values = input_values[current_node_id]
+                    for port_name in node._input_components:
+                        if port_name in saved_values:
+                            val = saved_values[port_name]
+                            if val is not None:
+                                node_inputs[port_name] = val
+
                 if node_inputs:
                     entry_inputs[node_name] = node_inputs
+
             elif isinstance(node, InteractionNode):
                 value = input_values.get(node_name, "")
                 port = node._input_ports[0] if node._input_ports else "input"

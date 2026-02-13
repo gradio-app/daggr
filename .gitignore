@@ -16,3 +16,5 @@ examples/test.py
 daggr/frontend/dist/
 build/
 tf_test_run/
+venv/
+.vscode/
