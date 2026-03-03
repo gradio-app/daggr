@@ -1,5 +1,13 @@
 # daggr
 
+## 0.8.0
+
+### Features
+
+- [#79](https://github.com/gradio-app/daggr/pull/79) [`d32cec2`](https://github.com/gradio-app/daggr/commit/d32cec21e93532ce7a7e66815922985c0bd5cb75) - feat: Introduce `InputNode` for grouping UI controls.  Thanks @elismasilva!
+- [#81](https://github.com/gradio-app/daggr/pull/81) [`34267c9`](https://github.com/gradio-app/daggr/commit/34267c9f93729cc4fa4839b15feb44a239897ec9) - stylized thin scrollbars.  Thanks @elismasilva!
+- [#77](https://github.com/gradio-app/daggr/pull/77) [`9002cca`](https://github.com/gradio-app/daggr/commit/9002cca2b312731572d4d80d7efe3cd9483e19b3) - Feature: Toggle Dark/Light Mode (based on @elismasilva's changes).  Thanks @abidlabs!
+
 ## 0.7.0
 
 ### Features
