@@ -86,6 +86,28 @@
 	.item-list-items {
 		max-height: 300px;
 		overflow-y: auto;
+		scrollbar-width: thin;
+		scrollbar-color: rgba(136, 136, 136, 0.4) transparent;
+	}
+
+	.item-list-items::-webkit-scrollbar {
+		width: 6px;
+		height: 6px;
+	}
+
+	.item-list-items::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.item-list-items::-webkit-scrollbar-thumb {
+		background-color: rgba(136, 136, 136, 0.3);
+		border-radius: 10px;
+		border: 1px solid transparent;
+		background-clip: content-box;
+	}
+
+	.item-list-items::-webkit-scrollbar-thumb:hover {
+		background-color: var(--color-accent);
 	}
 
 	.item-list-item {

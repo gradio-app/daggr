@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Html from './components/Html.svelte';
 	import { onMount } from 'svelte';
 	import { EmbeddedComponent, MapItemsSection, ItemListSection } from './components';
 	import type { GraphNode, GraphEdge, CanvasData, GradioComponentData } from './types';
@@ -2641,37 +2640,32 @@
 		color: var(--body-text-color);
 	}
 
-	
-	:global(.node::-webkit-scrollbar),
-	:global(.embedded-components::-webkit-scrollbar),
-	:global(.item-list-items::-webkit-scrollbar),
-	:global(.gallery-grid::-webkit-scrollbar) {
+	.node::-webkit-scrollbar,
+	.embedded-components::-webkit-scrollbar {
 		width: 6px;
 		height: 6px;
 	}
 
-	:global(.node::-webkit-scrollbar-track),
-	:global(.embedded-components::-webkit-scrollbar-track) {
+	.node::-webkit-scrollbar-track,
+	.embedded-components::-webkit-scrollbar-track {
 		background: transparent;
 	}
 
-	:global(.node::-webkit-scrollbar-thumb),
-	:global(.embedded-components::-webkit-scrollbar-thumb) {
+	.node::-webkit-scrollbar-thumb,
+	.embedded-components::-webkit-scrollbar-thumb {
 		background-color: rgba(136, 136, 136, 0.3);
 		border-radius: 10px;
 		border: 1px solid transparent;
 		background-clip: content-box;
 	}
 
-	:global(.node::-webkit-scrollbar-thumb:hover),
-	:global(.embedded-components::-webkit-scrollbar-thumb:hover) {
+	.node::-webkit-scrollbar-thumb:hover,
+	.embedded-components::-webkit-scrollbar-thumb:hover {
 		background-color: var(--color-accent);
 	}
 
-	:global(.node),
-	:global(.embedded-components),
-	:global(.item-list-items),
-	:global(.gallery-grid) {
+	.node,
+	.embedded-components {
 		scrollbar-width: thin;
 		scrollbar-color: rgba(136, 136, 136, 0.4) transparent;
 	}

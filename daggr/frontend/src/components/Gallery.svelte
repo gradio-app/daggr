@@ -172,6 +172,28 @@
 		gap: 4px;
 		padding: 0 6px 6px;
 		overflow-y: auto;
+		scrollbar-width: thin;
+		scrollbar-color: rgba(136, 136, 136, 0.4) transparent;
+	}
+
+	.gallery-grid::-webkit-scrollbar {
+		width: 6px;
+		height: 6px;
+	}
+
+	.gallery-grid::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.gallery-grid::-webkit-scrollbar-thumb {
+		background-color: rgba(136, 136, 136, 0.3);
+		border-radius: 10px;
+		border: 1px solid transparent;
+		background-clip: content-box;
+	}
+
+	.gallery-grid::-webkit-scrollbar-thumb:hover {
+		background-color: var(--color-accent);
 	}
 
 	.gallery-item {
