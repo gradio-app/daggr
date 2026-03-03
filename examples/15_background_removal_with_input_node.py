@@ -7,7 +7,7 @@ from daggr import GradioNode, Graph, InputNode
 
 parameters = InputNode(
     "Parameters-Test",
-    inputs={
+    ports={
         "prompt": gr.Textbox(  # An input node is created for the prompt
             label="Prompt",
             value="A cheetah in the grassy savanna.",

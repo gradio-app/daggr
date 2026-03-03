@@ -775,7 +775,7 @@ class InteractionNode(Node):
 class InputNode(Node):
     """
     A node that groups multiple Gradio input components into a single, organized block.
-    Each component defined in the `inputs` dictionary becomes a distinct output port.
+    Each component defined in the `ports` dictionary becomes a distinct output port.
     """
 
     _name_counters: dict[str, int] = {}
@@ -783,25 +783,37 @@ class InputNode(Node):
     def __init__(
         self,
         name: str | None = None,
-        inputs: dict[str, Any] | None = None,
+        ports: dict[str, Any] | None = None,
     ):
         """
         Initializes the InputNode.
 
         Args:
-            inputs: A dictionary where keys are port names and values are Gradio components (e.g., gr.Textbox).
+            ports: A dictionary where keys are port names and values are Gradio components (e.g., gr.Textbox).
             name: An optional display name for the node. A default name will be generated if not provided.
         """
         super().__init__(name)
 
-        inputs = inputs or {}
+        ports = ports or {}
+        if not isinstance(ports, dict):
+            raise TypeError(
+                "InputNode `ports` must be a dictionary mapping port names to Gradio components."
+            )
 
-        self._output_ports = list(inputs.keys())
-        self._input_components = {
-            port_name: comp
-            for port_name, comp in inputs.items()
-            if _is_gradio_component(comp)
-        }
+        invalid_ports = [
+            f"{port_name} ({type(comp).__name__})"
+            for port_name, comp in ports.items()
+            if not _is_gradio_component(comp)
+        ]
+        if invalid_ports:
+            invalid_ports_list = ", ".join(invalid_ports)
+            raise ValueError(
+                "InputNode `ports` values must be Gradio components. "
+                f"Invalid entries: {invalid_ports_list}"
+            )
+
+        self._output_ports = list(ports.keys())
+        self._input_components = dict(ports)
 
         self._input_ports = []
         self._output_components = {}
