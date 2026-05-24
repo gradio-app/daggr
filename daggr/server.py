@@ -1401,6 +1401,35 @@ class DaggrServer:
                     to_visit.append(source)
         return list(ancestors)
 
+    def _get_component_input_node_ids(self) -> dict[tuple[str, str], str]:
+        """Map each component input port to its canonical synthetic input id.
+
+        The graph renderer creates only one synthetic input node for a shared
+        Gradio component instance. Execution must use the same first-seen
+        component id so downstream nodes read the value submitted for that
+        shared input instead of falling back to the component default.
+        """
+        component_to_input_node: dict[int, str] = {}
+        input_node_ids: dict[tuple[str, str], str] = {}
+
+        for node_name, node in self.graph.nodes.items():
+            if isinstance(node, ChoiceNode):
+                continue
+
+            if isinstance(node, InputNode):
+                continue
+
+            for port_name, comp in node._input_components.items():
+                comp_id = id(comp)
+                if comp_id not in component_to_input_node:
+                    component_to_input_node[comp_id] = f"{node_name}__{port_name}"
+                input_node_name = component_to_input_node[comp_id]
+                input_node_ids[(node_name, port_name)] = input_node_name.replace(
+                    " ", "_"
+                ).replace("-", "_")
+
+        return input_node_ids
+
     def _get_user_provided_output(
         self, node, node_id: str, input_values: dict[str, Any]
     ) -> dict[str, Any] | None:
@@ -1498,6 +1527,7 @@ class DaggrServer:
         execution_order = self.graph.get_execution_order()
         nodes_to_execute = [n for n in execution_order if n in nodes_to_run]
 
+        component_input_node_ids = self._get_component_input_node_ids()
         entry_inputs: dict[str, dict[str, Any]] = {}
         for node_name in nodes_to_execute:
             node = self.graph.nodes[node_name]
@@ -1505,8 +1535,7 @@ class DaggrServer:
             if node._input_components:
                 node_inputs = {}
                 for port_name in node._input_components:
-                    input_node_name = f"{node_name}__{port_name}"
-                    input_node_id = input_node_name.replace(" ", "_").replace("-", "_")
+                    input_node_id = component_input_node_ids[(node_name, port_name)]
                     if input_node_id in input_values:
                         value = input_values[input_node_id].get("value")
                         if value is not None:
@@ -1605,6 +1634,7 @@ class DaggrServer:
         execution_order = self.graph.get_execution_order()
         nodes_to_execute = [n for n in execution_order if n in nodes_to_run]
 
+        component_input_node_ids = self._get_component_input_node_ids()
         entry_inputs: dict[str, dict[str, Any]] = {}
         for node_name in nodes_to_execute:
             node = self.graph.nodes[node_name]
@@ -1612,8 +1642,7 @@ class DaggrServer:
             if node._input_components:
                 node_inputs = {}
                 for port_name in node._input_components:
-                    input_node_name = f"{node_name}__{port_name}"
-                    input_node_id = input_node_name.replace(" ", "_").replace("-", "_")
+                    input_node_id = component_input_node_ids[(node_name, port_name)]
                     if input_node_id in input_values:
                         value = input_values[input_node_id].get("value")
                         if value is not None:
@@ -1841,15 +1870,14 @@ class DaggrServer:
         execution_order = self.graph.get_execution_order()
         nodes_to_execute = [n for n in execution_order if n in target_nodes]
 
+        component_input_node_ids = self._get_component_input_node_ids()
         entry_inputs: dict[str, dict[str, Any]] = {}
         for node_name in nodes_to_execute:
             node = self.graph.nodes[node_name]
             if node._input_components:
                 node_inputs = {}
                 for port_name in node._input_components:
-                    input_node_id = f"{node_name}__{port_name}".replace(
-                        " ", "_"
-                    ).replace("-", "_")
+                    input_node_id = component_input_node_ids[(node_name, port_name)]
                     if input_node_id in input_values:
                         node_inputs[port_name] = input_values[input_node_id]
                 if node_inputs:
