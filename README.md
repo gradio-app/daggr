@@ -1,3 +1,7 @@
+> [!IMPORTANT]
+> **`daggr` is deprecated in favor of `gr.Workflow`, which is built into Gradio and actively maintained.**
+> See the [Workflows guide](https://gradio.app/guides/workflows) to get started. This repository is archived and read-only.
+
 <h3 align="center">
   <div style="display:flex;flex-direction:row;">
     <picture>
